@@ -1,0 +1,43 @@
+[tool.poetry]
+name = "embrapa"
+version = "0.1.0"
+description = ""
+authors = ["email dos alunos - MLE"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+fastapi = "^0.110.0"
+uvicorn = "^0.29.0"
+sqlalchemy = "^2.0.29"
+pandas = "^2.2.1"
+aiosqlite = "^0.20.0"
+greenlet = "^3.0.3"
+
+[tool.poetry.group.dev.dependencies]
+isort = "^5.13.2"
+taskipy = "^1.12.2"
+blue = "^0.9.1"
+httpx = "^0.27.0"
+
+[tool.isort]
+profile = "black"
+line_length = 79
+extend_skip = ['migrations']
+
+[tool.pytest.ini_options]
+pythonpath = "."
+
+[tool.blue]
+extend-exclude = '(migrations/)'
+
+[tool.taskipy.tasks]
+format = 'blue .  && isort .'
+run = 'uvicorn embrapa.app:app --reload'
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.scripts]
+setup = "export PYTHONDONTWRITEBYTECODE=1"
