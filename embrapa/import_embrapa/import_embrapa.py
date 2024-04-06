@@ -2,7 +2,7 @@ import sqlite3
 
 import pandas as pd
 
-pd.set_option('future.no_silent_downcasting', True) 
+pd.set_option('future.no_silent_downcasting', True)
 
 table_names = [
     'producao',
@@ -32,6 +32,11 @@ def import_csv_site_embrapa():
             dados['2019'].fillna(0, inplace=True)
             dados['2022'].replace('*', 0, inplace=True)
             dados['2022'].fillna(0, inplace=True)
+        elif table_name == 'comercializacao':
+            anos = [str(ano) for ano in range(1970, 2023)]
+            header = ['Id', 'Produto2', 'Produto'] + anos
+            dados = pd.read_csv(url, sep=';', names=header)
+            dados = dados.drop('Produto2', axis=1)
         else:
             dados = pd.read_csv(url, sep=';')
 
@@ -43,7 +48,6 @@ def import_csv_site_embrapa():
             )   # removendo acento para criacao de campo
             # Substituindo valores nulos por 0 nas colunas '1970' e '2022'
             dados.fillna(0, inplace=True)
-
 
         if not table_exists(conn, table_name):
 
@@ -81,12 +85,17 @@ def import_csv_files_embrapa():
             dados['2019'].fillna(0, inplace=True)
             dados['2022'].replace('*', 0, inplace=True)
             dados['2022'].fillna(0, inplace=True)
+        elif table_name == 'comercializacao':
+            anos = [str(ano) for ano in range(1970, 2023)]
+            header = ['Id', 'Produto2', 'Produto'] + anos
+            dados = pd.read_csv(url, sep=';', names=header)
+            dados = dados.drop('Produto2', axis=1)
         else:
 
             dados = pd.read_csv(url, sep=';')
 
-        conn = sqlite3.connect('db.sqlite3')  
-        
+        conn = sqlite3.connect('db.sqlite3')
+
         if table_name == 'importacao' or table_name == 'exportacao':
             dados.rename(
                 columns={'País': 'pais'}, inplace=True
@@ -94,7 +103,6 @@ def import_csv_files_embrapa():
             # Substituindo valores nulos por 0 nas colunas 'ano_1970_1' e 'ano_2022'
             # Substituindo valores nulos por 0 nas colunas '1970' e '2022'
             dados.fillna(0, inplace=True)
-     
 
         dados.to_sql(table_name, conn, index=False, if_exists='append')
 

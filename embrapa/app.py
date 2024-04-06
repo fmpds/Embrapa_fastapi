@@ -6,11 +6,18 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from embrapa import database
 from embrapa.import_embrapa import import_embrapa
-from embrapa.repository import producaoRepository, processamentoRepository, importacaoRepository, exportacaoRepository
-from embrapa.schemas.producao import Producao
-from embrapa.schemas.processamento import Processamento
-from embrapa.schemas.importacao import Importacao
+from embrapa.repository import (
+    comercializacaoRepository,
+    exportacaoRepository,
+    importacaoRepository,
+    processamentoRepository,
+    producaoRepository,
+)
+from embrapa.schemas.comercializacao import Comercializacao
 from embrapa.schemas.exportacao import Exportacao
+from embrapa.schemas.importacao import Importacao
+from embrapa.schemas.processamento import Processamento
+from embrapa.schemas.producao import Producao
 
 app = FastAPI()
 
@@ -64,7 +71,14 @@ async def get_importacoes(db: database.AsyncSessionLocal = Depends(get_db)):
     importacoes = await importacaoRepository.get_importacoes(db)
     return importacoes
 
+
 @app.get('/api/exportacao/', response_model=List[Exportacao])
 async def get_exportacoes(db: database.AsyncSessionLocal = Depends(get_db)):
     exportacoes = await exportacaoRepository.get_exportacoes(db)
     return exportacoes
+
+
+@app.get('/api/comercializacao/', response_model=List[Comercializacao])
+async def get_exportacoes(db: database.AsyncSessionLocal = Depends(get_db)):
+    comercializacoes = await comercializacaoRepository.get_comercializacoes(db)
+    return comercializacoes

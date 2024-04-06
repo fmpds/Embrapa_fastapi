@@ -108,7 +108,6 @@ class ExportacaoBase(BaseModel):
     ano_2021: int
     ano_2021_1: int
     ano_2022: int
-   
 
 
 class ExportacaoCreate(ExportacaoBase):

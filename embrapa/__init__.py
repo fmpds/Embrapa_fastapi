@@ -1,4 +1,3 @@
-
 import os
-os.environ["PYTHONDONTWRITEBYTECODE"] = "1"
 
+os.environ['PYTHONDONTWRITEBYTECODE'] = '1'
