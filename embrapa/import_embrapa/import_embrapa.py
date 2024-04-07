@@ -1,3 +1,4 @@
+import re
 import sqlite3
 
 import pandas as pd
@@ -48,6 +49,16 @@ def import_csv_site_embrapa():
             )   # removendo acento para criacao de campo
             # Substituindo valores nulos por 0 nas colunas '1970' e '2022'
             dados.fillna(0, inplace=True)
+            regex1 = re.compile('^\d{4}\.\d$')
+            regex2 = re.compile('\d{4}')
+
+            for header in dados.columns:
+                if regex1.match(header):
+                    nome_header = 'Valor_' + header[:4]
+                    dados.rename(columns={header: nome_header}, inplace=True)
+                elif regex2.match(header):
+                    nome_header = 'Quantidade_' + header
+                    dados.rename(columns={header: nome_header}, inplace=True)
 
         if not table_exists(conn, table_name):
 
@@ -103,6 +114,16 @@ def import_csv_files_embrapa():
             # Substituindo valores nulos por 0 nas colunas 'ano_1970_1' e 'ano_2022'
             # Substituindo valores nulos por 0 nas colunas '1970' e '2022'
             dados.fillna(0, inplace=True)
+            regex1 = re.compile('^\d{4}\.\d$')
+            regex2 = re.compile('\d{4}')
+
+            for header in dados.columns:
+                if regex1.match(header):
+                    nome_header = 'Valor_' + header[:4]
+                    dados.rename(columns={header: nome_header}, inplace=True)
+                elif regex2.match(header):
+                    nome_header = 'Quantidade_' + header
+                    dados.rename(columns={header: nome_header}, inplace=True)
 
         dados.to_sql(table_name, conn, index=False, if_exists='append')
 
