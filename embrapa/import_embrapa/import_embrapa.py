@@ -6,157 +6,260 @@ import pandas as pd
 
 
 
-def f_read_datasets(dataset:str, path:str, cols:list) -> pd.core.frame.DataFrame:
+class read_dataset(object):
     
-    if dataset == 'comercializacao':
+    def __init__(self, path:str, dataset:str, cols:list):
+        self.path = path
+        self.dataset = dataset
+        self.cols = cols
+
+
+    def f_read_datasets(self) -> pd.core.frame.DataFrame:
         
-        time_interval = [str(ano) for ano in range(1970, 2023)]
+        if self.dataset == 'comercializacao':
+            
+            time_interval = [str(ano) for ano in range(1970, 2023)]
 
-        header = [*cols, *time_interval]
-        dataframe = pd.read_csv(path, header=None, names=header, on_bad_lines='skip', sep = ';')
-    elif dataset == 'processamemto':
-        dataframe = pd.read_csv(path, sep = '\t')
-    else:
-        dataframe = pd.read_csv(path, sep = ';')
-        
-        
-    return dataframe
-
-def f_std_column_names(dataframe:pd.core.frame.DataFrame)-> pd.core.frame.DataFrame:
-    
-    
-    #print(dataframe.columns)
-    novos_nomes_colunas = {coluna: unidecode(coluna).upper() for coluna in dataframe.columns}
-    
-    #print(novos_nomes_colunas)
-    dataframe = dataframe.rename(columns=novos_nomes_colunas)
-    
-    return dataframe
-
-
-
-def f_unpivot_table(cols:list, dataframe_adjusted:pd.core.frame.DataFrame, values=str) -> pd.core.frame.DataFrame:
-    '''
-    
-    
-    '''
-    dataframe_unpivot = dataframe_adjusted.melt(id_vars=cols, var_name='ANO', value_name= values)[[*cols, 'ANO', values]]
-    dataframe_unpivot.drop(['ID'], axis=1, inplace = True)
-    
-    return dataframe_unpivot
-
-def f_remove_accents(df_exp_merge:pd.core.frame.DataFrame,  col_name:str) -> pd.core.frame.DataFrame:
-    '''
-        Função para remover os acentos dos caracteres
-    
-    '''
-    df_exp_merge[col_name] = df_exp_merge[col_name].apply(lambda x: unidecode(str(x)))
-    
-    return df_exp_merge
-
-def f_handling_missing_values(dataframe:pd.core.frame.DataFrame, col_name:str) -> pd.core.frame.DataFrame:
-    '''
-        Função para tratar valores faltantes 
-    
-    '''
-
-    if dataframe[col_name].isna().sum() > 0:
-        if dataframe[col_name].dtypes == 'int64' or dataframe[col_name].dtypes == 'float64':
-            dataframe[col_name].fillna(0, inplace = True)
+            header = [*self.cols, *time_interval]
+            dataframe = pd.read_csv(self.path, header=None, names=header, on_bad_lines='skip', sep = ';')
+        elif self.dataset == 'processamento':
+            dataframe = pd.read_csv(self.path, sep = '\t', encoding='latin-1')
         else:
-            dataframe[col_name].fillna('-', inplace = True)
+            dataframe = pd.read_csv(self.path, sep = ';')
+        
+        return dataframe
+
+class etl_methods(object):
     
-    df = dataframe.copy()
+    def __init__(self, cols, values_unpivot):
+        self.cols = cols
+        self.values_unpivot = values_unpivot
+        
+    def f_std_column_names(self, dataframe)-> pd.core.frame.DataFrame:
+        
+        
+        new_cols_names = {coluna: unidecode(coluna).upper() for coluna in dataframe.columns}
+        
+        dataframe = dataframe.rename(columns=new_cols_names)
+        
+        return dataframe
+
+
+    def f_unpivot_table(self, dataframe) -> pd.core.frame.DataFrame:
+  
+        dataframe_unpivot = dataframe.melt(id_vars=self.cols, var_name='ANO', value_name= self.values_unpivot)[[*self.cols, 'ANO', self.values_unpivot]]
+        dataframe_unpivot.drop(['ID'], axis=1, inplace = True)
+        
+        return dataframe_unpivot
+
+    def f_remove_accents(self, dataframe, col_name:str) -> pd.core.frame.DataFrame:
+        '''
+            Função para remover os acentos dos caracteres
+        
+        '''
+        dataframe[col_name] = dataframe[col_name].apply(lambda x: unidecode(str(x)))
+        
+        return dataframe
+
+
+    def f_handling_missing_values(self, dataframe, col_name:str) -> pd.core.frame.DataFrame:
+        '''
+            Função para tratar valores faltantes 
+        
+        '''
+        def f_replace_by_zero(value):
+            
+            import re
+            
+            text_pattern = re.compile(r'[a-zA-Z]+')
+            
+            return re.sub(text_pattern, 0, value)
+        
+
+        if dataframe[col_name].isna().sum() > 0:
+            if dataframe[col_name].dtypes == 'int64' or dataframe[col_name].dtypes == 'float64':
+                dataframe[col_name] = dataframe[col_name].fillna(0, inplace = False)
+            
+            else:
+                dataframe[col_name] = dataframe[col_name].fillna('-', inplace = False)
+        
+        return dataframe
     
-    return df
+    
+    def f_remove_product_acumul_2(self, dataframe, col_name:str) -> list:
+        
+        rows_to_remove = []
+        
+        for i in range(1, dataframe.shape[0]):
+            
+            if dataframe.at[i-1, col_name][-1].isupper() and dataframe.at[i, col_name][-1].islower():
+                rows_to_remove.append(i)
+
+        return rows_to_remove
+    
+
+    def f_adjust_final_table(self, dataframe:pd.core.frame.DataFrame, cols_to_drop, cols_to_rename) -> pd.core.frame.DataFrame:
+        
+        
+        if cols_to_rename != None:
+            dataframe.rename(columns=cols_to_rename, inplace = True)
+        
+        if cols_to_drop != None:
+            dataframe.drop(cols_to_drop, inplace = True, axis = 1)
+        
+        return dataframe
+
+    def f_correct_types_exp_imp(self, dataframe:pd.core.frame.DataFrame) -> pd.core.frame.DataFrame:
+    
+        dataframe['PAIS'] = dataframe['PAIS'].astype(str)
+        dataframe['ANO'] = dataframe['ANO'].astype('int64')
+        dataframe['QUANTIDADE (KG)'] = dataframe['QUANTIDADE (KG)'].fillna(0).astype('int64')
+        dataframe['VALOR (DOL)'] = dataframe['VALOR (DOL)'].astype('float64')
+    
+        return dataframe
+
+    def f_correct_types_generic(self, dataframe:pd.core.frame.DataFrame) -> pd.core.frame.DataFrame:
+        
+        dataframe['PRODUTO'] = dataframe['PRODUTO'].astype(str)
+        dataframe['ANO'] = dataframe['ANO'].astype('int64')
+        dataframe['LITROS'] = dataframe['LITROS'].astype('int64')
+        dataframe['TIPO'] = dataframe['TIPO'].astype(str)
+        
+        return dataframe
+    
+    def f_correct_types_proc(self, dataframe:pd.core.frame.DataFrame) -> pd.core.frame.DataFrame:
+        
+        dataframe['CULTIVAR'] = dataframe['CULTIVAR'].astype(str)
+        dataframe['ANO'] = dataframe['ANO'].astype('int64')
+        dataframe['QUANTIDADE (KG)'] = dataframe['QUANTIDADE (KG)'].astype('int64')
+        dataframe['TIPO'] = dataframe['TIPO'].astype(str)
+        
+        return dataframe
 
 
 
-def f_get_dol_values(dataframe:pd.core.frame.DataFrame, cols:list) -> pd.core.frame.DataFrame:
-    
-    dol = [column for column in dataframe.columns if column.endswith('.1')]
-    
-    df_exp_dol = dataframe.loc[:, [*cols,*dol]]
-    
-    return df_exp_dol
+    def f_get_dol_values(self, dataframe:pd.core.frame.DataFrame) -> pd.core.frame.DataFrame:
+        
+        dol = [column for column in dataframe.columns if column.endswith('.1')]
+        
+        df_dol = dataframe.loc[:, [*self.cols,*dol]]
+        
+        return df_dol
 
-def f_get_kg_values(dataframe:pd.core.frame.DataFrame)-> pd.core.frame.DataFrame:
-    
-    kg = [column for column in dataframe.columns if not column.endswith('.1')]
-    
-    df_exp_kg = dataframe.loc[:, kg]
-    
-    return df_exp_kg
+    def f_get_kg_values(self, dataframe:pd.core.frame.DataFrame)-> pd.core.frame.DataFrame:
+        
+        kg = [column for column in dataframe.columns if not column.endswith('.1')]
+        
+        df_kg = dataframe.loc[:, kg]
+        
+        return df_kg
 
-def f_remove_dot_1(df_exp_dol:pd.core.frame.DataFrame) -> pd.core.frame.DataFrame:
-    
-    columns_adjusted = [column.replace('.1', '') for column in list(df_exp_dol.columns)]
-    
-    df_exp_dol.columns = columns_adjusted
-    
-    return df_exp_dol
+    def f_remove_dot_1(self, df_dol:pd.core.frame.DataFrame) -> pd.core.frame.DataFrame:
+        
+        columns_adjusted = [column.replace('.1', '') for column in list(df_dol.columns)]
+        
+        df_dol.columns = columns_adjusted
+        
+        return df_dol
 
-def f_create_type_product(row, coluna):
-    if row[coluna][-1].isupper():
-        return row[coluna]
+def f_adjust_table(df, cols, values_unpivot, dataset:dict) -> pd.core.frame.DataFrame:
+    
+    def f_create_type_product(row, column):
+        if row[column][-1].isupper():
+            return row[column]
+        else:
+            return np.nan
+    
+    
+    etl_comer = etl_methods(cols=cols, values_unpivot=values_unpivot)
+    
+    
+    df = etl_comer.f_std_column_names(df)
+    
+    df_unpivot = etl_comer.f_unpivot_table(dataframe=df)
+    
+    
+    column =str(list(dataset.values())[0])
+    
+    df_unpivot['TIPO'] =  df_unpivot.apply(lambda row: f_create_type_product(row, column), axis=1)
+    df_unpivot['TIPO'] = df_unpivot['TIPO'].ffill()
+    
+    
+    rows_to_remove = etl_comer.f_remove_product_acumul_2(df_unpivot, column)
+    
+    rows_to_remove = [x - 1 for x in rows_to_remove]
+    df_unpivot.drop(rows_to_remove, inplace = True)
+    
+    
+    def f_replace_by_zero(value):
+        import re
+        
+        pattern = re.compile(r'[a-zA-Z*]+')
+        
+        return re.sub(pattern, '0', value)
+    
+    
+    
+    if str(list(dataset.keys())[0]) == "comercializacao":
+        
+        
+        
+        
+        df_final = etl_comer.f_adjust_final_table(df_unpivot, ['PRODUTO1'], {'PRODUTO2':'PRODUTO'})
+    
+        df_final = etl_comer.f_correct_types_generic(df_final)
+    elif str(list(dataset.keys())[0]) == "processamento":
+        df_final = etl_comer.f_adjust_final_table(df_unpivot, ['CONTROL'], None)
+        
+        df_final['QUANTIDADE (KG)'] = df_final['QUANTIDADE (KG)'].astype(str).apply(f_replace_by_zero)
+        
+        df_final = etl_comer.f_correct_types_proc(df_final)
     else:
-        return np.nan
+        df_final = etl_comer.f_adjust_final_table(df_unpivot, None, None)
     
-def f_remove_product_acumul(dataframe:pd.core.frame.DataFrame, col:str) -> pd.core.frame.DataFrame:
+        df_final = etl_comer.f_correct_types_generic(df_final)
     
-    def f_last_uppercase(valor):
-        return valor[-1].isupper() if isinstance(valor, str) else False
     
-    rows_to_remove = dataframe[col].apply(f_last_uppercase)
-    
-    dataframe = dataframe[~rows_to_remove]
-    
-    return dataframe
+    cols_to_handle_missing =  list(df_final.columns)
+        
+    for col in cols_to_handle_missing:
+        df_final = etl_comer.f_handling_missing_values(df_final, col_name=col)
+        
+    return df_final
 
 
-def f_adjust_comer_table(self) -> pd.core.frame.DataFrame:
+def f_adjust_exp_imp_table(df_exp_imp, cols, values_unpivot):
     
-    df_exp = f_std_column_names()
+    etl_exp_imp = etl_methods(cols=cols, values_unpivot=values_unpivot)
     
-    df_exp_kg = f_get_kg_values()
-    df_exp_dol = f_get_dol_values()
-    df_exp_dol = f_remove_dot_1(df_exp_dol)
     
-    df_exp_kg_adjusted = f_unpivot_table(values='QUANTIDADE (KG)')
-    df_exp_dol_adjusted = f_unpivot_table(values='VALOR (USA)')
+    df_exp_imp = etl_exp_imp.f_std_column_names(df_exp_imp)
     
-    df_exp_merge = df_exp_kg_adjusted.merge(df_exp_dol_adjusted, how = 'inner', on = ['PAIS', 'ANO'])
     
-    df_exp_merge = f_remove_accents(df_exp_merge, 'PAIS')
+    df_exp_kg = etl_exp_imp.f_get_kg_values(df_exp_imp)
+    df_exp_dol = etl_exp_imp.f_get_dol_values(df_exp_imp)
+    df_exp_dol = etl_exp_imp.f_remove_dot_1(df_exp_dol)
+
+    df_exp_kg_unpivot = etl_exp_imp.f_unpivot_table(dataframe=df_exp_kg)
+    df_exp_dol_unpivot = etl_exp_imp.f_unpivot_table(dataframe=df_exp_dol)
+    
+    df_exp_dol_unpivot.rename(columns = {"QUANTIDADE (KG)": "VALOR (DOL)"}, inplace = True)
+    
+
+    df_exp_merge = df_exp_kg_unpivot.merge(df_exp_dol_unpivot, how = 'inner', on = ['PAIS', 'ANO'])
+
+    df_exp_merge = etl_exp_imp.f_remove_accents(df_exp_merge, 'PAIS')
+
+    df_exp_merge = etl_exp_imp.f_correct_types_exp_imp(df_exp_merge)
     
     cols_to_handle_missing =  list(df_exp_merge.columns)
-    
     for col in cols_to_handle_missing:
-        df_exp_merge = f_handling_missing_values(col_name=col)
-    
+        df_exp_merge = etl_exp_imp.f_handling_missing_values(dataframe=df_exp_merge, col_name=col)
+        
     return df_exp_merge
-
-
-def f_adjust_final_table(dataframe:pd.core.frame.DataFrame, cols_to_drop:list, cols_to_rename:dict) -> pd.core.frame.DataFrame:
-    dataframe.rename(columns=cols_to_rename, inplace = True)
-    
-    dataframe.drop(cols_to_drop, inplace = True, axis = 1)
-    
-    return dataframe
-    
-
-
 
 
 pd.set_option('future.no_silent_downcasting', True)
-
-table_names = [
-    'producao',
-    'processamento',
-    'comercializacao',
-    'importacao',
-    'exportacao',
-]
 
 
 def import_csv_site_embrapa():
@@ -167,57 +270,87 @@ def import_csv_site_embrapa():
         
         Returns:
     '''
+ 
+    paths = {"comercializacao":"http://vitibrasil.cnpuv.embrapa.br/download/Comercio.csv",
+             "producao":"http://vitibrasil.cnpuv.embrapa.br/download/Producao.csv",
+             "processamento":"http://vitibrasil.cnpuv.embrapa.br/download/ProcessaViniferas.csv",
+             "exportacao":"http://vitibrasil.cnpuv.embrapa.br/download/ExpVinho.csv",
+             "importacao":"http://vitibrasil.cnpuv.embrapa.br/download/ImpVinhos.csv"}
+    
+    
+    conn = sqlite3.connect('db.sqlite3')
+    for dataset in list(paths.keys()):
+    
+        if dataset == "comercializacao":
+            cols = ['ID', 'PRODUTO1', 'PRODUTO2']
+            datasets_columns = {"comercializacao": "PRODUTO2"}
+            values_unpivot = "LITROS"
+            
+            read = read_dataset(path=paths[dataset], dataset=dataset, cols=cols)
 
-    urls = [
-        'http://vitibrasil.cnpuv.embrapa.br/download/Producao.csv',
-        'http://vitibrasil.cnpuv.embrapa.br/download/ProcessaViniferas.csv',
-        'http://vitibrasil.cnpuv.embrapa.br/download/Comercio.csv',
-        'http://vitibrasil.cnpuv.embrapa.br/download/ImpVinhos.csv',
-        'http://vitibrasil.cnpuv.embrapa.br/download/ExpVinho.csv',
-    ]
+            df_comer = read.f_read_datasets()
+            df_final = f_adjust_table(df_comer, cols=cols, values_unpivot=values_unpivot, dataset=datasets_columns)
+            
+            #df_comer_final.to_csv("./df_comer_processed.csv", encoding="utf-16")
+            
+        elif dataset == "producao":
+            cols = ['ID', 'PRODUTO']
+            datasets_columns = {"producao": "PRODUTO"}
+            values_unpivot = "LITROS"
+            
+            
+            read = read_dataset(path=paths[dataset], dataset=dataset, cols=cols)
 
-    for url, table_name in zip(urls, table_names):
+            df_prod = read.f_read_datasets()
+            df_final = f_adjust_table(df_prod, cols=cols, values_unpivot=values_unpivot, dataset=datasets_columns)
 
-        if table_name == 'processamento':
-            dados = pd.read_csv(url, sep='\t')
-            # Substindo os valores NA e *  nas colunas '2019' e '2022' por 0
-            dados['Ano'].replace('nd', 0, inplace=True)
-            dados['Ano'].fillna(0, inplace=True)
-            dados['Ano'].replace('*', 0, inplace=True)
-            dados['Ano'].fillna(0, inplace=True)
-        elif table_name == 'comercializacao':
-            anos = [str(ano) for ano in range(1970, 2023)]
-            header = ['Id', 'Produto2', 'Produto'] + anos
-            dados = pd.read_csv(url, sep=';', names=header)
-            dados = dados.drop('Produto2', axis=1)
+            #df_prod_final.to_csv("./df_prod_processed.csv", encoding="utf-16")
+
+        elif dataset == "processamento":
+            cols = ['ID', 'CONTROL', 'CULTIVAR']
+            datasets_columns = {"processamento": "CULTIVAR"}
+            values_unpivot = "QUANTIDADE (KG)"
+            
+            
+            read = read_dataset(path=paths[dataset], dataset=dataset, cols=cols)
+
+            df_proc = read.f_read_datasets()
+            df_final = f_adjust_table(df_proc, cols=cols, values_unpivot=values_unpivot, dataset=datasets_columns)
+            
+            #df_proc_final.to_csv("./df_proc_processed.csv", encoding="utf-16")
+            
+        elif dataset == "exportacao":
+            cols = ['ID', 'PAIS']
+            values_unpivot = "QUANTIDADE (KG)"
+            
+            
+            read = read_dataset(path=paths[dataset], cols=cols, dataset=dataset)
+
+            df_exp = read.f_read_datasets()
+
+            df_final = f_adjust_exp_imp_table(df_exp, cols=cols, values_unpivot=values_unpivot)
+            
+            #df_exp_final.to_csv("./df_exp_processed.csv", encoding="utf-16")
+            
+        elif dataset == "importacao":
+            cols = ['ID', 'PAIS']
+            values_unpivot = "QUANTIDADE (KG)"
+            
+            
+            read = read_dataset(path=paths[dataset], cols=cols, dataset=dataset)
+
+            df_imp = read.f_read_datasets()
+
+            df_final = f_adjust_exp_imp_table(df_imp, cols=cols, values_unpivot=values_unpivot)
+                
+            #df_imp_final.to_csv("./df_imp_processed.csv", encoding="utf-16")
+            
+        if not table_exists(conn, dataset):
+
+            df_final.to_sql(dataset, conn, index=False)
         else:
-            dados = pd.read_csv(url, sep=';')
-        
-        conn = sqlite3.connect('db.sqlite3')
 
-        if table_name == 'importacao' or table_name == 'exportacao':
-            dados.rename(
-                columns={'País': 'pais'}, inplace=True
-            )   # removendo acento para criacao de campo
-            # Substituindo valores nulos por 0 nas colunas '1970' e '2022'
-            dados.fillna(0, inplace=True)
-            regex1 = re.compile('^\d{4}\.\d$')
-            regex2 = re.compile('\d{4}')
-
-            for header in dados.columns:
-                if regex1.match(header):
-                    nome_header = 'Valor_' + header[:4]
-                    dados.rename(columns={header: nome_header}, inplace=True)
-                elif regex2.match(header):
-                    nome_header = 'Quantidade_' + header
-                    dados.rename(columns={header: nome_header}, inplace=True)
-
-        if not table_exists(conn, table_name):
-
-            dados.to_sql(table_name, conn, index=False)
-        else:
-
-            dados.to_sql(table_name, conn, index=False, if_exists='append')
+            df_final.to_sql(dataset, conn, index=False, if_exists='append')
 
         conn.close()
 
@@ -236,54 +369,3 @@ def table_exists(conn, table_name):
     )
     return cursor.fetchone() is not None
 
-
-def import_csv_files_embrapa():
-
-    files = [
-        'embrapa/csv_files/Producao.csv',
-        'embrapa/csv_files/ProcessaViniferas.csv',
-        'embrapa/csv_files/Comercio.csv',
-        'embrapa/csv_files/ImpVinhos.csv',
-        'embrapa/csv_files/ExpVinho.csv',
-    ]
-
-    for url, table_name in zip(files, table_names):
-        if table_name == 'processamento':
-            dados = pd.read_csv(url, sep='\t')
-            # Substindo os valores NA e *  nas colunas '2019' e '2022' por 0
-            dados['2019'].replace('nd', 0, inplace=True)
-            dados['2019'].fillna(0, inplace=True)
-            dados['2022'].replace('*', 0, inplace=True)
-            dados['2022'].fillna(0, inplace=True)
-        elif table_name == 'comercializacao':
-            anos = [str(ano) for ano in range(1970, 2023)]
-            header = ['Id', 'Produto2', 'Produto'] + anos
-            dados = pd.read_csv(url, sep=';', names=header)
-            dados = dados.drop('Produto2', axis=1)
-        else:
-
-            dados = pd.read_csv(url, sep=';')
-
-        conn = sqlite3.connect('db.sqlite3')
-
-        if table_name == 'importacao' or table_name == 'exportacao':
-            dados.rename(
-                columns={'País': 'pais'}, inplace=True
-            )   # removendo acento para criacao de campo
-            # Substituindo valores nulos por 0 nas colunas 'ano_1970_1' e 'ano_2022'
-            # Substituindo valores nulos por 0 nas colunas '1970' e '2022'
-            dados.fillna(0, inplace=True)
-            regex1 = re.compile('^\d{4}\.\d$')
-            regex2 = re.compile('\d{4}')
-
-            for header in dados.columns:
-                if regex1.match(header):
-                    nome_header = 'Valor_' + header[:4]
-                    dados.rename(columns={header: nome_header}, inplace=True)
-                elif regex2.match(header):
-                    nome_header = 'Quantidade_' + header
-                    dados.rename(columns={header: nome_header}, inplace=True)
-
-        dados.to_sql(table_name, conn, index=False, if_exists='append')
-
-        conn.close()
