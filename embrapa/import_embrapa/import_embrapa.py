@@ -15,15 +15,31 @@ class read_dataset(object):
 
 
     def f_read_datasets(self) -> pd.core.frame.DataFrame:
+        '''
+            Funcao para ler datasets. Essa metodos pode realizar a leitura de qualquer um 
+            dos datasets no site da embrapa.
+            
+            Parametros:
+            - Todos os parametros do construtor.
+            
+            Retorna:
+            - dataframe: DataFrame pandas.
+                Dataframe com raw data
+        
+        '''
         
         if self.dataset == 'comercializacao':
             
+            # definindo intervalo de tempos colunas
             time_interval = [str(ano) for ano in range(1970, 2023)]
 
             header = [*self.cols, *time_interval]
+            
             dataframe = pd.read_csv(self.path, header=None, names=header, on_bad_lines='skip', sep = ';')
+        
         elif self.dataset == 'processamento':
             dataframe = pd.read_csv(self.path, sep = '\t', encoding='latin-1')
+        
         else:
             dataframe = pd.read_csv(self.path, sep = ';')
         
@@ -36,7 +52,19 @@ class etl_methods(object):
         self.values_unpivot = values_unpivot
         
     def f_std_column_names(self, dataframe)-> pd.core.frame.DataFrame:
-        
+        '''
+            Funcao para padrinizar formato das colunas. Todas os nomes das colunas 
+            sao transformados para letras maiuscula.
+            
+            Parametros:
+            - Todos os parametros do construtor.
+            dataframe: Dataframe pandas.
+                Dataframe output do metodo f_read_datasets
+
+            Retorna:
+            - dataframe: DataFrame pandas.
+                Dataframe com colunas padronizadas
+        '''
         
         new_cols_names = {coluna: unidecode(coluna).upper() for coluna in dataframe.columns}
         
@@ -46,7 +74,23 @@ class etl_methods(object):
 
 
     def f_unpivot_table(self, dataframe) -> pd.core.frame.DataFrame:
-  
+        '''
+            Funcao para despivotar as tabelas do site da embrapa. Eu um analise
+            das tabelas, notamos que elas se encontravam no formato de tabelas pivo,
+            que fica dificil tanto para analises quando para leitura dinamiza das 
+            tabelas (como as colunas são os anos, eles teriam que ser alterados ma-
+            nualmente nos codigos para inclusão de novos anos)
+            
+            Parametros:
+            - Todos os parametros do construtor.
+            - dataframe: Dataframe pandas.
+                Dataframe com colunas padronizadas
+                
+            Retorna:
+            - dataframe: DataFrame pandas.
+                Dataframe despivotado
+        
+        '''
         dataframe_unpivot = dataframe.melt(id_vars=self.cols, var_name='ANO', value_name= self.values_unpivot)[[*self.cols, 'ANO', self.values_unpivot]]
         dataframe_unpivot.drop(['ID'], axis=1, inplace = True)
         
@@ -54,7 +98,18 @@ class etl_methods(object):
 
     def f_remove_accents(self, dataframe, col_name:str) -> pd.core.frame.DataFrame:
         '''
-            Função para remover os acentos dos caracteres
+            Função para remover os acentos dos caracteres de uma coluna
+            
+            Parametros:
+            - Todos os parametros do construtor.
+            - dataframe: Dataframe pandas.
+                Dataframe depivotado
+            - col_name: str
+                Nome da coluna para remoçaõ de acentos
+            
+            Retorna:
+            - dataframe: DataFrame pandas.
+                Dataframe despivotado com coluna com valores sem acento
         
         '''
         dataframe[col_name] = dataframe[col_name].apply(lambda x: unidecode(str(x)))
@@ -64,18 +119,21 @@ class etl_methods(object):
 
     def f_handling_missing_values(self, dataframe, col_name:str) -> pd.core.frame.DataFrame:
         '''
-            Função para tratar valores faltantes 
+            Função para tratar valores faltantes. Para colunas do tipo numerico (float
+            ou inteiro) os missings ou valores que representem os missings são substitui
+            dos por 0, caso contrario por '-'
         
+            Parametros:
+            - Todos os parametros do construtor.
+            - dataframe: Dataframe pandas.
+                Dataframe depivotado
+            - col_name: str
+                Nome da coluna para tratar missings
+                
+            Retorna:
+            - dataframe: DataFrame pandas.
+                Dataframe despivotado com coluna com missings tratados
         '''
-        def f_replace_by_zero(value):
-            
-            import re
-            
-            text_pattern = re.compile(r'[a-zA-Z]+')
-            
-            return re.sub(text_pattern, 0, value)
-        
-
         if dataframe[col_name].isna().sum() > 0:
             if dataframe[col_name].dtypes == 'int64' or dataframe[col_name].dtypes == 'float64':
                 dataframe[col_name] = dataframe[col_name].fillna(0, inplace = False)
@@ -87,11 +145,30 @@ class etl_methods(object):
     
     
     def f_remove_product_acumul_2(self, dataframe, col_name:str) -> list:
+        '''
+            Algumas tabelas da embrapa tem a seguinte caracteristica: Dentro da coluna produto 
+            temos uma linha que representa o grupo dos produtos seguintes, e seu valor é a soma 
+            dos membros desse grupo. Essa função trata essa inconsistencia, marcando para ser 
+            removidas as linhas que representam classes de produtos
+            
+            Parametros:
+            - Todos os parametros do construtor.
+            - dataframe: Dataframe pandas.
+                Dataframe depivotado
+            - col_name: str
+                Nome da coluna para tratar Tipo dos vinhos
+                
+            Retorna:
+            - rows_to_remove: list.
+                Lista de indexes das linhas para serem removidas
         
+        '''
         rows_to_remove = []
         
         for i in range(1, dataframe.shape[0]):
             
+            # verifica se valor da linha do produto é Maiusculo e se o seguinte é minusculo
+            # isso caracterica linhas que representam classes de vinhos
             if dataframe.at[i-1, col_name][-1].isupper() and dataframe.at[i, col_name][-1].islower():
                 rows_to_remove.append(i)
 
@@ -99,7 +176,19 @@ class etl_methods(object):
     
 
     def f_adjust_final_table(self, dataframe:pd.core.frame.DataFrame, cols_to_drop, cols_to_rename) -> pd.core.frame.DataFrame:
-        
+        '''
+            Função para renomear e remover colunas. Nota-se que algumas colunas das tabelas representam
+            uma copia ou algum ruido. Elas são removidas com essa função
+            
+            Parametros:
+            - Todos os parametros do construtor.
+            - dataframe: Dataframe pandas.
+                Dataframe depivotado
+            - cols_to_drop: list, None
+                Lista de nomes das colunas que serão removidas. Se None, nenhuma coluna pe removida
+            - cols_to_rename: dict, None
+                Dicionario com mapeamento dos nomes das colunas. Se None, nenhuma coluna é renomeada    
+        '''
         
         if cols_to_rename != None:
             dataframe.rename(columns=cols_to_rename, inplace = True)
@@ -110,7 +199,19 @@ class etl_methods(object):
         return dataframe
 
     def f_correct_types_exp_imp(self, dataframe:pd.core.frame.DataFrame) -> pd.core.frame.DataFrame:
-    
+        '''
+            Função para definir tipos das tabelas de Imp e Exp.
+            
+            Parametros:
+            - Todos os parametros do construtor.
+            - dataframe: Dataframe pandas.
+                Dataframe depivotado
+                
+            Retorna:
+            - dataframe: Dataframe pandas.
+                Dataframe com tipos definidos de acordo com as caracteristicas do dados
+            
+        '''
         dataframe['PAIS'] = dataframe['PAIS'].astype(str)
         dataframe['ANO'] = dataframe['ANO'].astype('int64')
         dataframe['QUANTIDADE (KG)'] = dataframe['QUANTIDADE (KG)'].fillna(0).astype('int64')
@@ -119,7 +220,19 @@ class etl_methods(object):
         return dataframe
 
     def f_correct_types_generic(self, dataframe:pd.core.frame.DataFrame) -> pd.core.frame.DataFrame:
-        
+        '''
+            Função para definir tipos das tabelas de comer e prod.
+            
+            Parametros:
+            - Todos os parametros do construtor.
+            - dataframe: Dataframe pandas.
+                Dataframe depivotado
+                
+            Retorna:
+            - dataframe: Dataframe pandas.
+                Dataframe com tipos definidos de acordo com as caracteristicas do dados
+            
+        '''  
         dataframe['PRODUTO'] = dataframe['PRODUTO'].astype(str)
         dataframe['ANO'] = dataframe['ANO'].astype('int64')
         dataframe['LITROS'] = dataframe['LITROS'].astype('int64')
@@ -128,7 +241,20 @@ class etl_methods(object):
         return dataframe
     
     def f_correct_types_proc(self, dataframe:pd.core.frame.DataFrame) -> pd.core.frame.DataFrame:
-        
+        '''
+            Função para definir tipos das tabelas de proce.
+            
+            Parametros:
+            - Todos os parametros do construtor.
+            - dataframe: Dataframe pandas.
+                Dataframe depivotado
+                
+            Retorna:
+            - dataframe: Dataframe pandas.
+                Dataframe com tipos definidos de acordo com as caracteristicas do dados
+            
+        '''  
+       
         dataframe['CULTIVAR'] = dataframe['CULTIVAR'].astype(str)
         dataframe['ANO'] = dataframe['ANO'].astype('int64')
         dataframe['QUANTIDADE (KG)'] = dataframe['QUANTIDADE (KG)'].astype('int64')
@@ -192,6 +318,18 @@ def f_adjust_table(df, cols, values_unpivot, dataset:dict) -> pd.core.frame.Data
     
     
     def f_replace_by_zero(value):
+        '''
+            Funcao para remover qualquer conjunto de caracteres de uma coluna
+            numerica.
+            
+            Parametros:
+            - value: str
+            
+            Retorna:
+            - subsituit valor por zero se padrão de caracteres for identificado
+        
+        '''
+        
         import re
         
         pattern = re.compile(r'[a-zA-Z*]+')
@@ -201,10 +339,7 @@ def f_adjust_table(df, cols, values_unpivot, dataset:dict) -> pd.core.frame.Data
     
     
     if str(list(dataset.keys())[0]) == "comercializacao":
-        
-        
-        
-        
+                
         df_final = etl_comer.f_adjust_final_table(df_unpivot, ['PRODUTO1'], {'PRODUTO2':'PRODUTO'})
     
         df_final = etl_comer.f_correct_types_generic(df_final)
