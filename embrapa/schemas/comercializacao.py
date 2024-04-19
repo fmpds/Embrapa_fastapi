@@ -2,11 +2,10 @@ from pydantic import BaseModel, Field
 
 
 class ComercializacaoBase(BaseModel):
-    PRODUTO: str = Field(...)
-    TIPO: str = Field(...)
-    LITROS: int = Field(...)
-    ANO: int = Field(...)
-            
+    PRODUTO: str
+    TIPO: str
+    LITROS: int
+    ANO: int
             
 class ComercializacaoCreate(ComercializacaoBase):
     pass
