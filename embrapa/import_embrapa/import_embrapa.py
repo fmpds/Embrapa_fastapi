@@ -92,7 +92,9 @@ class etl_methods(object):
         
         '''
         dataframe_unpivot = dataframe.melt(id_vars=self.cols, var_name='ANO', value_name= self.values_unpivot)[[*self.cols, 'ANO', self.values_unpivot]]
-        dataframe_unpivot.drop(['ID'], axis=1, inplace = True)
+        #dataframe_unpivot.drop(['ID'], axis=1, inplace = True)
+        
+        dataframe_unpivot['ID'] = dataframe_unpivot['ID'].astype(str) + '_' + dataframe_unpivot['ANO'].astype(str)
         
         return dataframe_unpivot
 
@@ -214,8 +216,8 @@ class etl_methods(object):
         '''
         dataframe['PAIS'] = dataframe['PAIS'].astype(str)
         dataframe['ANO'] = dataframe['ANO'].astype('int64')
-        dataframe['QUANTIDADE (KG)'] = dataframe['QUANTIDADE (KG)'].fillna(0).astype('int64')
-        dataframe['VALOR (DOL)'] = dataframe['VALOR (DOL)'].astype('float64')
+        dataframe['QUANTIDADE'] = dataframe['QUANTIDADE'].fillna(0).astype('int64')
+        dataframe['VALOR'] = dataframe['VALOR'].astype('float64')
     
         return dataframe
 
@@ -257,7 +259,7 @@ class etl_methods(object):
        
         dataframe['CULTIVAR'] = dataframe['CULTIVAR'].astype(str)
         dataframe['ANO'] = dataframe['ANO'].astype('int64')
-        dataframe['QUANTIDADE (KG)'] = dataframe['QUANTIDADE (KG)'].astype('int64')
+        dataframe['QUANTIDADE'] = dataframe['QUANTIDADE'].astype('int64')
         dataframe['TIPO'] = dataframe['TIPO'].astype(str)
         
         return dataframe
@@ -346,7 +348,7 @@ def f_adjust_table(df, cols, values_unpivot, dataset:dict) -> pd.core.frame.Data
     elif str(list(dataset.keys())[0]) == "processamento":
         df_final = etl_comer.f_adjust_final_table(df_unpivot, ['CONTROL'], None)
         
-        df_final['QUANTIDADE (KG)'] = df_final['QUANTIDADE (KG)'].astype(str).apply(f_replace_by_zero)
+        df_final['QUANTIDADE'] = df_final['QUANTIDADE'].astype(str).apply(f_replace_by_zero)
         
         df_final = etl_comer.f_correct_types_proc(df_final)
     else:
@@ -378,7 +380,7 @@ def f_adjust_exp_imp_table(df_exp_imp, cols, values_unpivot):
     df_exp_kg_unpivot = etl_exp_imp.f_unpivot_table(dataframe=df_exp_kg)
     df_exp_dol_unpivot = etl_exp_imp.f_unpivot_table(dataframe=df_exp_dol)
     
-    df_exp_dol_unpivot.rename(columns = {"QUANTIDADE (KG)": "VALOR (DOL)"}, inplace = True)
+    df_exp_dol_unpivot.rename(columns = {"QUANTIDADE": "VALOR"}, inplace = True)
     
 
     df_exp_merge = df_exp_kg_unpivot.merge(df_exp_dol_unpivot, how = 'inner', on = ['PAIS', 'ANO'])
@@ -413,7 +415,7 @@ def import_csv_site_embrapa():
              "importacao":"http://vitibrasil.cnpuv.embrapa.br/download/ImpVinhos.csv"}
     
     
-    conn = sqlite3.connect('db.sqlite3')
+    
     for dataset in list(paths.keys()):
     
         if dataset == "comercializacao":
@@ -444,7 +446,7 @@ def import_csv_site_embrapa():
         elif dataset == "processamento":
             cols = ['ID', 'CONTROL', 'CULTIVAR']
             datasets_columns = {"processamento": "CULTIVAR"}
-            values_unpivot = "QUANTIDADE (KG)"
+            values_unpivot = "QUANTIDADE"
             
             
             read = read_dataset(path=paths[dataset], dataset=dataset, cols=cols)
@@ -456,7 +458,7 @@ def import_csv_site_embrapa():
             
         elif dataset == "exportacao":
             cols = ['ID', 'PAIS']
-            values_unpivot = "QUANTIDADE (KG)"
+            values_unpivot = "QUANTIDADE"
             
             
             read = read_dataset(path=paths[dataset], cols=cols, dataset=dataset)
@@ -469,7 +471,7 @@ def import_csv_site_embrapa():
             
         elif dataset == "importacao":
             cols = ['ID', 'PAIS']
-            values_unpivot = "QUANTIDADE (KG)"
+            values_unpivot = "QUANTIDADE"
             
             
             read = read_dataset(path=paths[dataset], cols=cols, dataset=dataset)
@@ -479,7 +481,8 @@ def import_csv_site_embrapa():
             df_final = f_adjust_exp_imp_table(df_imp, cols=cols, values_unpivot=values_unpivot)
                 
             #df_imp_final.to_csv("./df_imp_processed.csv", encoding="utf-16")
-            
+        
+        conn = sqlite3.connect('db.sqlite3')
         if not table_exists(conn, dataset):
 
             df_final.to_sql(dataset, conn, index=False)
