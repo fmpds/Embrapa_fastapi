@@ -2,10 +2,10 @@ from pydantic import BaseModel, Field
 
 
 class ExportacaoBase(BaseModel):
-    PAIS: str = Field(...)
-    ANO: int = Field(...)
-    QUANTIDADE:int = Field(...)
-    VALOR:float = Field(...)
+    pais: str
+    ano: int 
+    quantidade: int 
+    valor: float 
 
 
 class ExportacaoCreate(ExportacaoBase):
@@ -13,6 +13,7 @@ class ExportacaoCreate(ExportacaoBase):
 
 
 class Exportacao(ExportacaoBase):
-    ID: str
+    id_x: int
+
     class Config:
         from_attributes = True

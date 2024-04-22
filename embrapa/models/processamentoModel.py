@@ -7,7 +7,9 @@ class Processamento(Base):
     __tablename__ = 'processamento'
 
     id = Column(Integer, primary_key=True)
-    control = Column(String(50), nullable=False)
     cultivar = Column(String(50), nullable=False)
     ano = Column(Integer)
-    
+    quantidade = Column(Integer)
+    tipo = Column(String(50), nullable=False)
+
+

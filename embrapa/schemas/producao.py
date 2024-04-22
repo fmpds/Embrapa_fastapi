@@ -2,15 +2,18 @@ from pydantic import BaseModel, Field
 
 
 class ProducaoBase(BaseModel):
-    PRODUTO: str = Field(...)
-    ANO: int = Field(...)
-    LITROS: int = Field(...)
-    TIPO: str = Field(...)
+    produto: str 
+    ano: int 
+    litros: int 
+    tipo: str 
+
 
 class ProducaoCreate(ProducaoBase):
     pass
 
+
 class Producao(ProducaoBase):
-    ID: str
+    id: int
+
     class Config:
         from_attributes = True
