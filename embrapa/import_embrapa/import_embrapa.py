@@ -267,18 +267,7 @@ class etl_methods(object):
 
 
     def f_get_dol_values(self, dataframe:pd.core.frame.DataFrame) -> pd.core.frame.DataFrame:
-        '''
-            Função para recolher os valores dos anos relacionados ao dinheiro.
-            
-            Parametros:
-            - Todos os parametros do construtor.
-            - dataframe: Dataframe pandas.
-                Dataframe depivotado
-                
-            Retorna:
-            - dataframe: Dataframe pandas.
-                Dataframe com colunas dos anos com valores em dolar
-        '''        
+        
         dol = [column for column in dataframe.columns if column.endswith('.1')]
         
         df_dol = dataframe.loc[:, [*self.cols,*dol]]
@@ -286,18 +275,7 @@ class etl_methods(object):
         return df_dol
 
     def f_get_kg_values(self, dataframe:pd.core.frame.DataFrame)-> pd.core.frame.DataFrame:
-        '''
-            Função para recolher os valores dos anos relacionados a quantidade.
-            
-            Parametros:
-            - Todos os parametros do construtor.
-            - dataframe: Dataframe pandas.
-                Dataframe depivotado
-                
-            Retorna:
-            - dataframe: Dataframe pandas.
-                Dataframe com colunas dos anos com valores em kg
-        '''            
+        
         kg = [column for column in dataframe.columns if not column.endswith('.1')]
         
         df_kg = dataframe.loc[:, kg]
@@ -305,18 +283,7 @@ class etl_methods(object):
         return df_kg
 
     def f_remove_dot_1(self, df_dol:pd.core.frame.DataFrame) -> pd.core.frame.DataFrame:
-        '''
-            Função para tratar colunas de quantidade de dolares. Remover .1.
-            
-            Parametros:
-            - Todos os parametros do construtor.
-            - dataframe: Dataframe pandas.
-                Dataframe depivotado
-                
-            Retorna:
-            - dataframe: Dataframe pandas.
-                Dataframe com colunas dos anos com valores em dolares tratadas
-        '''          
+        
         columns_adjusted = [column.replace('.1', '') for column in list(df_dol.columns)]
         
         df_dol.columns = columns_adjusted
@@ -447,7 +414,7 @@ def import_csv_site_embrapa():
              "exportacao":"http://vitibrasil.cnpuv.embrapa.br/download/ExpVinho.csv",
              "importacao":"http://vitibrasil.cnpuv.embrapa.br/download/ImpVinhos.csv"}
     
-    conn = sqlite3.connect('db.sqlite3')
+    
     
     for dataset in list(paths.keys()):
     
@@ -515,16 +482,15 @@ def import_csv_site_embrapa():
                 
             #df_imp_final.to_csv("./df_imp_processed.csv", encoding="utf-16")
         
-        
+        conn = sqlite3.connect('db.sqlite3')
         if not table_exists(conn, dataset):
 
             df_final.to_sql(dataset, conn, index=False)
-            #conn.close()
         else:
 
-            df_final.to_sql(dataset, conn, index=False, if_exists='replace')
-            #conn.close()
-        #
+            df_final.to_sql(dataset, conn, index=False, if_exists='append')
+
+        conn.close()
 
 
 def table_exists(conn, table_name):
