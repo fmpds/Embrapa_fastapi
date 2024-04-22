@@ -2,6 +2,7 @@ import time
 from typing import List
 
 from fastapi import Depends, FastAPI, Query
+from fastapi.staticfiles import StaticFiles
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from embrapa import database
@@ -21,6 +22,7 @@ from embrapa.schemas.producao import Producao
 
 app = FastAPI()
 
+app.mount('/mkdocs', StaticFiles(directory='site', html=True), name='mkdocs')
 
 @app.get('/api/importar_csv_site_embrapa')
 def importa_csv(online: bool = False, description="Define se a importação será online ou offline"):

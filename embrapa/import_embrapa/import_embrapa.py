@@ -7,23 +7,24 @@ from unidecode import unidecode
 
 
 class read_dataset(object):
+    """
+    Funções da classe:
+        - `__init__`
+        - f_read_datasets
+    """
     def __init__(self, path: str, dataset: str, cols: list):
         self.path = path
         self.dataset = dataset
         self.cols = cols
 
     def f_read_datasets(self) -> pd.core.frame.DataFrame:
-        """
-        Funcao para ler datasets. Essa metodos pode realizar a leitura de qualquer um
-        dos datasets no site da embrapa.
+        """Função para ler datasets. Pode realizar a leitura de qualquer um dos datasets no site da embrapa.
 
-        Parametros:
-        - Todos os parametros do construtor.
+        Args:
+            self (Construtor): Todos os parâmetros do construtor.
 
-        Retorna:
-        - dataframe: DataFrame pandas.
-            Dataframe com raw data
-
+        Returns:
+            Dataframe: Dataframe com raw data
         """
 
         if self.dataset == 'comercializacao':
@@ -51,23 +52,35 @@ class read_dataset(object):
 
 
 class etl_methods(object):
+    """
+    Funções da classe:
+        - `__init__`
+        - f_adjust_final_table
+        - f_correct_types_exp_imp
+        - f_correct_types_generic
+        - f_correct_types_proc
+        - f_get_dol_values
+        - f_get_kg_values
+        - f_handling_missing_values
+        - f_remove_accents
+        - f_remove_dot_1
+        - f_remove_product_acumul_2
+        - f_std_column_names
+        - f_unpivot_table
+    """
     def __init__(self, cols, values_unpivot):
         self.cols = cols
         self.values_unpivot = values_unpivot
 
     def f_std_column_names(self, dataframe) -> pd.core.frame.DataFrame:
-        """
-        Funcao para padrinizar formato das colunas. Todas os nomes das colunas
-        sao transformados para letras maiuscula.
+        """Função para padronizar o formato das colunas. Todas os nomes das colunas são transformados para letras maiúscula.
 
-        Parametros:
-        - Todos os parametros do construtor.
-        dataframe: Dataframe pandas.
-            Dataframe output do metodo f_read_datasets
+        Args:
+            self (Construtor): Todos os parâmetros do construtor.
+            dataframe (Dataframe): Dataframe output do metodo f_read_datasets.
 
-        Retorna:
-        - dataframe: DataFrame pandas.
-            Dataframe com colunas padronizadas
+        Returns:
+            Dataframe: Dataframe com colunas padronizadas.
         """
 
         new_cols_names = {
@@ -78,23 +91,21 @@ class etl_methods(object):
 
         return dataframe
 
+    # Eu um analise
+    # das tabelas, notamos que elas se encontravam no formato de tabelas pivo,
+    # que fica dificil tanto para analises quando para leitura dinamiza das
+    # tabelas (como as colunas são os anos, eles teriam que ser alterados ma-
+    # nualmente nos codigos para inclusão de novos anos)
+
     def f_unpivot_table(self, dataframe) -> pd.core.frame.DataFrame:
-        """
-        Funcao para despivotar as tabelas do site da embrapa. Eu um analise
-        das tabelas, notamos que elas se encontravam no formato de tabelas pivo,
-        que fica dificil tanto para analises quando para leitura dinamiza das
-        tabelas (como as colunas são os anos, eles teriam que ser alterados ma-
-        nualmente nos codigos para inclusão de novos anos)
+        """Função para despivotar as tabelas do site da embrapa. 
 
-        Parametros:
-        - Todos os parametros do construtor.
-        - dataframe: Dataframe pandas.
-            Dataframe com colunas padronizadas
+        Args:
+            self (Construtor): Todos os parâmetros do construtor.
+            dataframe (dataframe): Dataframe com colunas padronizadas.
 
-        Retorna:
-        - dataframe: DataFrame pandas.
-            Dataframe despivotado
-
+        Returns:
+            dataframe_unpivot: Dataframe despivotado.
         """
         dataframe_unpivot = dataframe.melt(
             id_vars=self.cols, var_name='ANO', value_name=self.values_unpivot
@@ -113,20 +124,15 @@ class etl_methods(object):
     def f_remove_accents(
         self, dataframe, col_name: str
     ) -> pd.core.frame.DataFrame:
-        """
-        Função para remover os acentos dos caracteres de uma coluna
+        """Função para remover os acentos dos caracteres de uma coluna.
 
-        Parametros:
-        - Todos os parametros do construtor.
-        - dataframe: Dataframe pandas.
-            Dataframe depivotado
-        - col_name: str
-            Nome da coluna para remoçaõ de acentos
+        Args:
+            self (Construtor): Todos os parâmetros do construtor.
+            dataframe (Dataframe): Dataframe pandas.
+            col_name: Nome da coluna para remoção de acentos.
 
-        Retorna:
-        - dataframe: DataFrame pandas.
-            Dataframe despivotado com coluna com valores sem acento
-
+        Returns:
+            dataframe: Dataframe com colunas e valores sem acento.
         """
         dataframe[col_name] = dataframe[col_name].apply(
             lambda x: unidecode(str(x))
@@ -137,21 +143,17 @@ class etl_methods(object):
     def f_handling_missing_values(
         self, dataframe, col_name: str
     ) -> pd.core.frame.DataFrame:
-        """
-        Função para tratar valores faltantes. Para colunas do tipo numerico (float
+        """Função para tratar valores faltantes. Para colunas do tipo numerico (float
         ou inteiro) os missings ou valores que representem os missings são substitui
         dos por 0, caso contrario por '-'
 
-        Parametros:
-        - Todos os parametros do construtor.
-        - dataframe: Dataframe pandas.
-            Dataframe depivotado
-        - col_name: str
-            Nome da coluna para tratar missings
-
-        Retorna:
-        - dataframe: DataFrame pandas.
-            Dataframe despivotado com coluna com missings tratados
+        Args:
+            self (Construtor): Todos os parâmetros do construtor.
+            dataframe (Dataframe): Dataframe pandas.
+            col_name: Nome da coluna para tratar missings.
+            
+        Returns:
+            dataframe: Dataframe com coluna com missings tratados
         """
         if dataframe[col_name].isna().sum() > 0:
             if (
@@ -169,24 +171,21 @@ class etl_methods(object):
 
         return dataframe
 
+    #    Algumas tabelas da embrapa tem a seguinte caracteristica: Dentro da coluna produto
+    #    temos uma linha que representa o grupo dos produtos seguintes, e seu valor é a soma
+    #    dos membros desse grupo. Essa função trata essa inconsistencia, marcando para ser
+    #    removidas as linhas que representam classes de produtos
+
     def f_remove_product_acumul_2(self, dataframe, col_name: str) -> list:
-        """
-        Algumas tabelas da embrapa tem a seguinte caracteristica: Dentro da coluna produto
-        temos uma linha que representa o grupo dos produtos seguintes, e seu valor é a soma
-        dos membros desse grupo. Essa função trata essa inconsistencia, marcando para ser
-        removidas as linhas que representam classes de produtos
+        """Função para retirar a linha de soma total de determinados grupos de produtos.
 
-        Parametros:
-        - Todos os parametros do construtor.
-        - dataframe: Dataframe pandas.
-            Dataframe depivotado
-        - col_name: str
-            Nome da coluna para tratar Tipo dos vinhos
+        Args:
+            self (Construtor): Todos os parametros do construtor.
+            dataframe (Dataframe): Dataframe pandas.
+            col_name: Nome da coluna para tratar o tipo dos vinhos
 
-        Retorna:
-        - rows_to_remove: list.
-            Lista de indexes das linhas para serem removidas
-
+        Returns:
+            rows_to_remove: Uma lista de indexes das linhas para serem removidas
         """
         rows_to_remove = []
 
@@ -202,21 +201,23 @@ class etl_methods(object):
 
         return rows_to_remove
 
+    # Nota-se que algumas colunas das tabelas representam
+    # uma copia ou algum ruido. Elas são removidas com essa função
+
     def f_adjust_final_table(
         self, dataframe: pd.core.frame.DataFrame, cols_to_drop, cols_to_rename
     ) -> pd.core.frame.DataFrame:
         """
-        Função para renomear e remover colunas. Nota-se que algumas colunas das tabelas representam
-        uma copia ou algum ruido. Elas são removidas com essa função
+        Função para renomear e remover colunas. 
 
-        Parametros:
-        - Todos os parametros do construtor.
-        - dataframe: Dataframe pandas.
-            Dataframe depivotado
-        - cols_to_drop: list, None
-            Lista de nomes das colunas que serão removidas. Se None, nenhuma coluna pe removida
-        - cols_to_rename: dict, None
-            Dicionario com mapeamento dos nomes das colunas. Se None, nenhuma coluna é renomeada
+        Args:
+            self (Construtor): Todos os parametros do construtor.
+            dataframe (Dataframe): Dataframe pandas.
+            cols_to_drop (list, None): Lista de nomes das colunas que serão removidas. Se None, nenhuma coluna pe removida
+            cols_to_rename (dict, None): Dicionario com mapeamento dos nomes das colunas. Se None, nenhuma coluna é renomeada
+            
+        Returns:
+            dataframe: Dataframe com as colunas renomeadas/removidas determinadas
         """
 
         if cols_to_rename != None:
@@ -230,18 +231,14 @@ class etl_methods(object):
     def f_correct_types_exp_imp(
         self, dataframe: pd.core.frame.DataFrame
     ) -> pd.core.frame.DataFrame:
-        """
-        Função para definir tipos das tabelas de Imp e Exp.
+        """Função para definir tipos das tabelas de Imp e Exp.
 
-        Parametros:
-        - Todos os parametros do construtor.
-        - dataframe: Dataframe pandas.
-            Dataframe depivotado
+        Args:
+            self (Construtor): Todos os parametros do construtor.
+            dataframe (Dataframe): Dataframe pandas.
 
-        Retorna:
-        - dataframe: Dataframe pandas.
-            Dataframe com tipos definidos de acordo com as caracteristicas do dados
-
+        Returns:
+            dataframe: Dataframe com tipos definidos de acordo com as caracteristicas do dados
         """
         dataframe['PAIS'] = dataframe['PAIS'].astype(str)
         dataframe['ANO'] = dataframe['ANO'].astype('int64')
@@ -255,18 +252,14 @@ class etl_methods(object):
     def f_correct_types_generic(
         self, dataframe: pd.core.frame.DataFrame
     ) -> pd.core.frame.DataFrame:
-        """
-        Função para definir tipos das tabelas de comer e prod.
+        """Função para definir tipos das tabelas de comer e prod.
 
-        Parametros:
-        - Todos os parametros do construtor.
-        - dataframe: Dataframe pandas.
-            Dataframe depivotado
+        Args:
+            self (Construtor): Todos os parametros do construtor.
+            dataframe (Dataframe): Dataframe pandas.
 
-        Retorna:
-        - dataframe: Dataframe pandas.
-            Dataframe com tipos definidos de acordo com as caracteristicas do dados
-
+        Returns:
+            dataframe: Dataframe com tipos definidos de acordo com as caracteristicas do dados
         """
         dataframe['PRODUTO'] = dataframe['PRODUTO'].astype(str)
         dataframe['ANO'] = dataframe['ANO'].astype('int64')
@@ -278,18 +271,14 @@ class etl_methods(object):
     def f_correct_types_proc(
         self, dataframe: pd.core.frame.DataFrame
     ) -> pd.core.frame.DataFrame:
-        """
-        Função para definir tipos das tabelas de proce.
+        """Função para definir tipos das tabelas de comercialização e processamento.
 
-        Parametros:
-        - Todos os parametros do construtor.
-        - dataframe: Dataframe pandas.
-            Dataframe depivotado
+        Args:
+            self (Construtor): Todos os parametros do construtor.
+            dataframe (Dataframe): Dataframe pandas.
 
-        Retorna:
-        - dataframe: Dataframe pandas.
-            Dataframe com tipos definidos de acordo com as caracteristicas do dados
-
+        Returns:
+            dataframe: Dataframe com tipos definidos de acordo com as caracteristicas do dados
         """
 
         dataframe['CULTIVAR'] = dataframe['CULTIVAR'].astype(str)
@@ -302,7 +291,15 @@ class etl_methods(object):
     def f_get_dol_values(
         self, dataframe: pd.core.frame.DataFrame
     ) -> pd.core.frame.DataFrame:
+        """Função para ???
 
+        Args:
+            self (Construtor): Todos os parametros do construtor.
+            dataframe: Dataframe pandas...
+
+        Returns:
+            df_dol: Dataframe...
+        """
         dol = [column for column in dataframe.columns if column.endswith('.1')]
 
         df_dol = dataframe.loc[:, [*self.cols, *dol]]
@@ -312,7 +309,15 @@ class etl_methods(object):
     def f_get_kg_values(
         self, dataframe: pd.core.frame.DataFrame
     ) -> pd.core.frame.DataFrame:
+        """Função para ???
 
+        Args:
+            self (Construtor): Todos os parametros do construtor.
+            dataframe: Dataframe pandas...
+
+        Returns:
+            df_kg: Dataframe...
+        """
         kg = [
             column for column in dataframe.columns if not column.endswith('.1')
         ]
@@ -324,7 +329,16 @@ class etl_methods(object):
     def f_remove_dot_1(
         self, df_dol: pd.core.frame.DataFrame
     ) -> pd.core.frame.DataFrame:
+        
+        """Função para retirar colunas que terminam com o sufixo ".1"
 
+        Args:
+            self (Construtor): Todos os parametros do construtor.
+            df_dol (Dataframe): Dataframe pandas apos passar pelo processamento da função "f_get_dol_values"
+
+        Returns:
+            df_dol: Dataframe com as colunas filtradas
+        """
         columns_adjusted = [
             column.replace('.1', '') for column in list(df_dol.columns)
         ]
@@ -337,6 +351,17 @@ class etl_methods(object):
 def f_adjust_table(
     df, cols, values_unpivot, dataset: dict
 ) -> pd.core.frame.DataFrame:
+    """Função para ajustar um dataframe com todas as funções dentro de "etl_methods"
+
+        Args:
+            df (Dataframe): Dataframe 
+            cols (object): Colunas do dataframe
+            value_unpivot (object): Colunas despivotadas (?)
+            dataset: Dataset
+
+        Returns:
+            df_final: Dataframe filtrado
+    """
     def f_create_type_product(row, column):
         if row[column][-1].isupper():
             return row[column]
@@ -362,16 +387,13 @@ def f_adjust_table(
     df_unpivot.drop(rows_to_remove, inplace=True)
 
     def f_replace_by_zero(value):
-        """
-        Funcao para remover qualquer conjunto de caracteres de uma coluna
-        numerica.
+        """Função para remover qualquer conjunto de caracteres de uma coluna numerica.
 
-        Parametros:
-        - value: str
+        Args:
+            value (str): Uma cadeia de caracteres
 
-        Retorna:
-        - subsituit valor por zero se padrão de caracteres for identificado
-
+        Returns:
+            string: Uma cadeia de caracteres sem letras
         """
 
         import re
@@ -446,12 +468,11 @@ pd.set_option('future.no_silent_downcasting', True)
 
 
 def import_csv_site_embrapa(online: bool):
-    """
-    Descrição bla bla.
+    """Função para importar os arquivos .csv do site da embrapa
 
     Parameters:
+        online (bool): Em caso True os arquivos .csv serão baixados direto do site da embrapa, em caso de False os arquivos .csv serão carregados a partir de um diretorio local
 
-    Returns:
     """
 
     if online:
@@ -574,12 +595,11 @@ def import_csv_site_embrapa(online: bool):
 
 
 def table_exists(conn, table_name):
-    """
-    Descrição
+    """Função para verificar a existencia de tabelas no banco de dados.
+    Caso ja haja tabelas existentes com o mesmo nome as tabelas não serão importadas.
 
-    Parameters
-
-    Returns
+    Returns:
+        Valor (boolean): True para caso exista e False para caso não exista
     """
     cursor = conn.cursor()
     cursor.execute(
