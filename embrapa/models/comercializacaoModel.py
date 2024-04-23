@@ -6,8 +6,8 @@ from embrapa.database import Base
 class Comercializacao(Base):
     __tablename__ = 'comercializacao'
 
-    ID = Column(Integer, primary_key=True)
-    PRODUTO = Column(String(100), nullable=False)
-    ANO = Column(Integer)
-    LITROS = Column(Integer)
-    TIPO = Column(String(100), nullable=False)
+    id = Column(Integer, primary_key=True)
+    produto = Column(String(100), nullable=False)
+    ano = Column(Integer)
+    litros = Column(Integer)
+    tipo = Column(String(100), nullable=False)
