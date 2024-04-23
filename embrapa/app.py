@@ -1,7 +1,8 @@
 import time
 from typing import List
 
-from fastapi import Depends, FastAPI
+from fastapi import Depends, FastAPI, Query
+from fastapi.staticfiles import StaticFiles
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from embrapa import database
@@ -21,31 +22,18 @@ from embrapa.schemas.producao import Producao
 
 app = FastAPI()
 
+#app.mount('/mkdocs', StaticFiles(directory='site', html=True), name='mkdocs')
 
 @app.get('/api/importar_csv_site_embrapa')
-def importa_csv():
+def importa_csv(online: bool = False, description="Define se a importação será online ou offline"):
     try:
-        import_embrapa.import_csv_site_embrapa()
+        import_embrapa.import_csv_site_embrapa(online)
         return 'Arquivos CSVs importados com sucesso do site da Embrapa!'
     except TimeoutError:
         # Tratamento para tempo limite
         time.sleep(5)  # Espera 5 segundos e tenta novamente
-        import_embrapa.import_csv_site_embrapa()
+        import_embrapa.import_csv_site_embrapa(online)
         return 'Tentativa de importação de arquivos CSVs no site da EMBRAPA excedeu o tempo limite!'
-
-
-@app.get('/api/importar_csv_arquivos')
-def importa_arquivo_csv():
-    try:
-        import_embrapa.import_csv_files_embrapa()
-        return 'Arquivos CSVs importados com sucesso!'
-    except TimeoutError:
-        # Tratamento para tempo limite
-        time.sleep(5)  # Espera 5 segundos e tenta novamente
-        import_embrapa.import_csv_files_embrapa()
-        return (
-            'Tentativa de importação dos arquivos CSVs excedeu o tempo limite!'
-        )
 
 
 # Função para obter uma instância de sessão assíncrona do banco de dados
