@@ -94,7 +94,9 @@ class etl_methods(object):
         dataframe_unpivot = dataframe.melt(id_vars=self.cols, var_name='ANO', value_name= self.values_unpivot)[[*self.cols, 'ANO', self.values_unpivot]]
         #dataframe_unpivot.drop(['ID'], axis=1, inplace = True)
         
-        dataframe_unpivot['ID'] = dataframe_unpivot['ID'].astype(str) + '_' + dataframe_unpivot['ANO'].astype(str)
+        
+        
+        #dataframe_unpivot['ID'] = dataframe_unpivot['ID'].astype(str) + '_' + dataframe_unpivot['ANO'].astype(str)
         
         return dataframe_unpivot
 
@@ -351,6 +353,8 @@ def f_adjust_table(df, cols, values_unpivot, dataset:dict) -> pd.core.frame.Data
     rows_to_remove = [x - 1 for x in rows_to_remove]
     df_unpivot.drop(rows_to_remove, inplace = True)
     
+    df_unpivot['ID'] = range(0, len(df_unpivot['ID']))
+    df_unpivot['ID'] = df_unpivot['ID'].astype(str) + df_unpivot['ANO'].astype(str)
     
     def f_replace_by_zero(value):
         '''
@@ -416,11 +420,14 @@ def f_adjust_exp_imp_table(df_exp_imp, cols, values_unpivot):
     df_exp_dol_unpivot.rename(columns = {"QUANTIDADE": "VALOR"}, inplace = True)
     
 
-    df_exp_merge = df_exp_kg_unpivot.merge(df_exp_dol_unpivot, how = 'inner', on = ['PAIS', 'ANO'])
+    df_exp_merge = df_exp_kg_unpivot.merge(df_exp_dol_unpivot, how = 'inner', on = ['ID', 'PAIS', 'ANO'])
 
     df_exp_merge = etl_exp_imp.f_remove_accents(df_exp_merge, 'PAIS')
 
     df_exp_merge = etl_exp_imp.f_correct_types_exp_imp(df_exp_merge)
+    
+    df_exp_merge['ID'] = range(0, len(df_exp_merge['ID']))
+    df_exp_merge['ID'] = df_exp_merge['ID'].astype(str) + df_exp_merge['ANO'].astype(str)
     
     cols_to_handle_missing =  list(df_exp_merge.columns)
     for col in cols_to_handle_missing:
@@ -505,17 +512,15 @@ def import_csv_site_embrapa():
         elif dataset == "importacao":
             cols = ['ID', 'PAIS']
             values_unpivot = "QUANTIDADE"
-            
-            
+             
             read = read_dataset(path=paths[dataset], cols=cols, dataset=dataset)
 
             df_imp = read.f_read_datasets()
 
             df_final = f_adjust_exp_imp_table(df_imp, cols=cols, values_unpivot=values_unpivot)
-                
-            #df_imp_final.to_csv("./df_imp_processed.csv", encoding="utf-16")
-        
-        
+    
+            #df_imp_final.to_csv("./df_imp_processed.csv", encoding="utf-16")       
+
         if not table_exists(conn, dataset):
 
             df_final.to_sql(dataset, conn, index=False)
