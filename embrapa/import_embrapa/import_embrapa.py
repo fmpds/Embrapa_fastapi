@@ -319,9 +319,7 @@ def f_adjust_table(df, cols, values_unpivot, dataset: dict) -> pd.core.frame.Dat
 
     column = str(list(dataset.values())[0])
 
-    df_unpivot['TIPO'] = df_unpivot.apply(
-        lambda row: f_create_type_product(row, column), axis=1
-    )
+    df_unpivot['TIPO'] = df_unpivot.apply(lambda row: f_create_type_product(row, column), axis=1)
     df_unpivot['TIPO'] = df_unpivot['TIPO'].ffill()
 
     rows_to_remove = etl_comer.f_remove_product_acumul_2(df_unpivot, column)
@@ -411,7 +409,8 @@ def import_csv_site_embrapa(online: bool):
     """Função para importar os arquivos .csv do site da embrapa
 
     Parameters:
-        online (bool): Em caso True os arquivos .csv serão baixados direto do site da embrapa, em caso de False os arquivos .csv serão carregados a partir de um diretorio local
+        online (bool): Em caso True os arquivos .csv serão baixados direto do site da 
+        embrapa, em caso de False os arquivos .csv serão carregados a partir de um diretorio local
 
     """
 
