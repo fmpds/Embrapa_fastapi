@@ -161,7 +161,7 @@ class etl_methods(object):
 
             # verifica se valor da linha do produto é Maiusculo e se o seguinte é minusculo
             # isso caracterica linhas que representam classes de vinhos
-            if (dataframe.at[i - 1, col_name][-1].isupper() and dataframe.at[i, col_name][-1].islower()):
+            if (dataframe.at[i - 1, col_name][-2].isupper() and dataframe.at[i, col_name][-2].islower()):
                 rows_to_remove.append(i)
 
         return rows_to_remove
@@ -306,7 +306,7 @@ def f_adjust_table(df, cols, values_unpivot, dataset: dict) -> pd.core.frame.Dat
             df_final: Dataframe filtrado
     """
     def f_create_type_product(row, column):
-        if row[column][-1].isupper():
+        if row[column][-2].isupper():
             return row[column]
         else:
             return np.nan
@@ -319,9 +319,7 @@ def f_adjust_table(df, cols, values_unpivot, dataset: dict) -> pd.core.frame.Dat
 
     column = str(list(dataset.values())[0])
 
-    df_unpivot['TIPO'] = df_unpivot.apply(
-        lambda row: f_create_type_product(row, column), axis=1
-    )
+    df_unpivot['TIPO'] = df_unpivot.apply(lambda row: f_create_type_product(row, column), axis=1)
     df_unpivot['TIPO'] = df_unpivot['TIPO'].ffill()
 
     rows_to_remove = etl_comer.f_remove_product_acumul_2(df_unpivot, column)
@@ -386,11 +384,14 @@ def f_adjust_exp_imp_table(df_exp_imp, cols, values_unpivot):
     df_exp_kg_unpivot = etl_exp_imp.f_unpivot_table(dataframe=df_exp_kg)
     df_exp_dol_unpivot = etl_exp_imp.f_unpivot_table(dataframe=df_exp_dol)
 
+    df_exp_dol_unpivot.rename(columns={'QUANTIDADE':'VALOR'}, inplace = True)
+    
     df_exp_merge = df_exp_kg_unpivot.merge(df_exp_dol_unpivot, how = 'inner', on = ['ID', 'PAIS', 'ANO'])
 
 
     df_exp_merge = etl_exp_imp.f_remove_accents(df_exp_merge, 'PAIS')
 
+    #print(df_exp_merge.columns)
     df_exp_merge = etl_exp_imp.f_correct_types_exp_imp(df_exp_merge)
     
     df_exp_merge['ID'] = range(0, len(df_exp_merge['ID']))
@@ -411,7 +412,8 @@ def import_csv_site_embrapa(online: bool):
     """Função para importar os arquivos .csv do site da embrapa
 
     Parameters:
-        online (bool): Em caso True os arquivos .csv serão baixados direto do site da embrapa, em caso de False os arquivos .csv serão carregados a partir de um diretorio local
+        online (bool): Em caso True os arquivos .csv serão baixados direto do site da 
+        embrapa, em caso de False os arquivos .csv serão carregados a partir de um diretorio local
 
     """
 

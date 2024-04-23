@@ -13,7 +13,7 @@ class ImportacaoCreate(ImportacaoBase):
 
 
 class Importacao(ImportacaoBase):
-    id_x: int
+    id: int
 
     class Config:
         from_attributes = True
