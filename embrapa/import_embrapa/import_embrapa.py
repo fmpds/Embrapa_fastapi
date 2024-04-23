@@ -173,7 +173,7 @@ class etl_methods(object):
             
             # verifica se valor da linha do produto é Maiusculo e se o seguinte é minusculo
             # isso caracterica linhas que representam classes de vinhos
-            if dataframe.at[i-1, col_name][-1].isupper() and dataframe.at[i, col_name][-1].islower():
+            if dataframe.at[i-1, col_name][-2].isupper() and dataframe.at[i, col_name][-2].islower():
                 rows_to_remove.append(i)
 
         return rows_to_remove
@@ -328,7 +328,7 @@ class etl_methods(object):
 def f_adjust_table(df, cols, values_unpivot, dataset:dict) -> pd.core.frame.DataFrame:
     
     def f_create_type_product(row, column):
-        if row[column][-1].isupper():
+        if row[column][-2].isupper():
             return row[column]
         else:
             return np.nan
