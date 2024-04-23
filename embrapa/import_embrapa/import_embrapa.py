@@ -384,11 +384,14 @@ def f_adjust_exp_imp_table(df_exp_imp, cols, values_unpivot):
     df_exp_kg_unpivot = etl_exp_imp.f_unpivot_table(dataframe=df_exp_kg)
     df_exp_dol_unpivot = etl_exp_imp.f_unpivot_table(dataframe=df_exp_dol)
 
+    df_exp_dol_unpivot.rename(columns={'QUANTIDADE':'VALOR'}, inplace = True)
+    
     df_exp_merge = df_exp_kg_unpivot.merge(df_exp_dol_unpivot, how = 'inner', on = ['ID', 'PAIS', 'ANO'])
 
 
     df_exp_merge = etl_exp_imp.f_remove_accents(df_exp_merge, 'PAIS')
 
+    #print(df_exp_merge.columns)
     df_exp_merge = etl_exp_imp.f_correct_types_exp_imp(df_exp_merge)
     
     df_exp_merge['ID'] = range(0, len(df_exp_merge['ID']))
