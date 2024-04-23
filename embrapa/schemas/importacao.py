@@ -2,16 +2,18 @@ from pydantic import BaseModel, Field
 
 
 class ImportacaoBase(BaseModel):
-    PAIS: str = Field(...)
-    ANO: int = Field(...)
-    QUANTIDADE: int = Field(...)
-    VALOR: float = Field(...)
+    pais: str 
+    ano: int 
+    quantidade: int
+    valor: float
+
 
 class ImportacaoCreate(ImportacaoBase):
     pass
 
 
 class Importacao(ImportacaoBase):
-    ID: str
+    id_x: int
+
     class Config:
         from_attributes = True

@@ -1,0 +1,70 @@
+site_name: Docs API Embrapa
+nav:
+  - Home: index.md
+  - Documentação: documentacao.md
+  - Endpoints: endpoints.md
+  - Build: build.md
+  - Swagger: http://localhost:8000/docs
+  - Redoc: http://localhost:8000/redoc
+theme:
+  name: material
+  font:
+    text: Roboto
+    code: Roboto Mono
+  features:
+    - navigation.instant
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.sections
+    - navigation.top
+    - navigation.footer
+    - navigation.expand
+    - navigation.path
+    - toc.follow
+    # Para a "table of content" da documentação do mkdocs, retire a linha de codigo abaixo
+    - toc.integrate
+    - search.suggest
+    - search.highlight
+    - content.tabs.link
+    - content.code.annotation
+    - content.code.copy
+  language: pt-BR
+  palette:
+    - scheme: default
+      toggle:
+        icon: material/weather-night
+        name: Mudar para modo Escuro
+      primary: deep-purple
+      accent: deep-purple
+    - scheme: slate 
+      toggle:
+        icon: material/weather-sunny
+        name: Mudar para modo Claro   
+      primary: deep-purple
+      accent: deep-purple
+
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - admonition
+  - pymdownx.arithmatex:
+      generic: true
+  - footnotes
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.mark
+  - attr_list
+  - pymdownx.emoji:
+      emoji_index: !!python/name:materialx.emoji.twemoji
+      emoji_generator: !!python/name:materialx.emoji.to_svg
+
+plugins:
+- mkdocstrings:
+    handlers:
+      python:
+        paths: [embrapa]
+
+copyright: |
+  &copy; 2023 <a href="https://github.com/MLET-007"  target="_blank" rel="noopener">MLET-007</a>

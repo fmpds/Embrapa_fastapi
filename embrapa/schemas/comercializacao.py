@@ -1,16 +1,21 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ComercializacaoBase(BaseModel):
-    PRODUTO: str
-    TIPO: str
-    LITROS: int
-    ANO: int
-            
+    produto: str
+    ano: int 
+    litros: int
+    tipo: str 
+
+    
+
+
 class ComercializacaoCreate(ComercializacaoBase):
     pass
 
+
 class Comercializacao(ComercializacaoBase):
-    ID: str
+    id: int
+
     class Config:
         from_attributes = True
