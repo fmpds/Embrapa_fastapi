@@ -1,8 +1,8 @@
 from datetime import datetime, timedelta, timezone
 from typing import Annotated
 
-from fastapi import Depends, HTTPException, Request, Security, status
-from fastapi.security import OAuth2PasswordBearer, api_key, OAuth2PasswordRequestForm
+from fastapi import Depends, HTTPException, Security, status
+from fastapi.security import OAuth2PasswordBearer, api_key
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from sqlalchemy.future import select
@@ -61,6 +61,7 @@ def get_password_hash(password):
         return pwd_context.hash(password)
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
+
 
 def authenticate_user(username: str, password: str, db: Session):
     user = get_user(username, db)

@@ -3,7 +3,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.security import OAuth2PasswordRequestForm
-from embrapa.schemas.auth import UserInDB, User, Token
+from embrapa.schemas.auth import User, Token
 from embrapa.repository.authRepository import (
     authenticate_user,
     create_access_token,

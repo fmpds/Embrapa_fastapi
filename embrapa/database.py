@@ -1,5 +1,5 @@
 from sqlalchemy.orm import declarative_base, sessionmaker
-from config import settings
+from embrapa.config import settings
 from sqlalchemy import create_engine
 # DATABASE_URL = 'sqlite+aiosqlite:///./mle.db'
 # DATABASE_URL = 'sqlite+aiosqlite:///./db.sqlite3'
