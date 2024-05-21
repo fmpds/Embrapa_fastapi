@@ -34,6 +34,10 @@ A API será utilizada para alimentar uma base de dados de um modelo de Machine L
 - Taskipy
 - Blue
 - Httpx
+- Alembic
+- Postgres
+- Bcrypt
+- Pydantic
 
 ## Pré-requisitos
 
@@ -131,4 +135,11 @@ http://localhost:8000/doc
 
 Para mais informações sobre o projeto (... building)
 
+## Docker 
+
+Para rodar o projeto com docker basta executar
+```
+docker-compose up -d 
+``` 
+Um container com a aplicação e postgres será criado para uso
 

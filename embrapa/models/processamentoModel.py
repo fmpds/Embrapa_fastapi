@@ -11,5 +11,3 @@ class Processamento(Base):
     ano = Column(Integer)
     quantidade = Column(Integer)
     tipo = Column(String(50), nullable=False)
-
-

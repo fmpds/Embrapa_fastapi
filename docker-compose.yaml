@@ -1,0 +1,35 @@
+
+version: '3.8'
+
+services:
+  app:
+    entrypoint: ./entrypoint.sh
+    image: embrapa-app
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    ports:
+      - 8009:80
+    env_file:
+      - .env
+    environment:
+      - DATABASE_URI=postgresql://aleatorio:heyjoletsgo@host.docker.internal:5434/embrapa
+    depends_on:
+      - db
+  db:
+    image: postgres:15-alpine
+    platform: linux/x86_64
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    ports:
+      - 5434:5432
+    environment:
+      - POSTGRES_USER=aleatorio
+      - POSTGRES_PASSWORD=heyjoletsgo
+    networks:
+      - docker_compose
+volumes:
+  postgres_data:
+
+networks:
+  docker_compose:

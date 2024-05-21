@@ -35,6 +35,10 @@ A API será utilizada para alimentar uma base de dados de um modelo de Machine L
 - Taskipy
 - Blue
 - Httpx
+- Alembic
+- Postgres
+- Bcrypt
+- Pydantic
 
 ---
 
@@ -102,6 +106,13 @@ Para executar o projeto, use o seguinte comando:
 task run
 ```
 
+## Docker 
+
+Para rodar o projeto com docker basta executar
+```
+docker-compose up -d 
+``` 
+Um container com a aplicação e postgres será criado para uso
 ---
 
 ## Tarefas Disponíveis
@@ -117,3 +128,4 @@ Você pode executar qualquer tarefa usando o comando `poetry run task NOME_DA_TA
 format = 'blue .  && isort .'
 run = 'uvicorn embrapa.app:app --reload'
 ```
+
