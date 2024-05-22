@@ -1,9 +1,7 @@
-import re
-import sqlite3
-
 import numpy as np
 import pandas as pd
 from unidecode import unidecode
+
 from embrapa.database import engine
 
 
