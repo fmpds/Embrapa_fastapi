@@ -1,9 +1,17 @@
+"""
+O arquivo `import_embrapa.py` tem como função filtrar e carregar os arquivos .csv/dataset do [site da embrapa](http://vitibrasil.cnpuv.embrapa.br/index.php?opcao=opt_01).\
+ Possuindo aqui a explicação detalhada de suas funções, classes e citação das bibliotecas utilizadas.
+Bibliotecas utilizadas:
+
+    - numpy
+    - pandas
+    - unidecode
+"""
+
 import numpy as np
 import pandas as pd
 from unidecode import unidecode
-
 from embrapa.database import engine
-
 
 class read_dataset(object):
     """

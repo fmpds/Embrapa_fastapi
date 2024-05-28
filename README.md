@@ -1,9 +1,10 @@
-# MLE - Projeto API usando FastAPI, com dados da Embrapa - arquivos CSV.
+# Home
 
+## Introdução
 
 Este projeto é a criação de uma API pública de consulta com finalidade de analise de dados de vitivinicultura oriundos do site da embrapa - arquivos CSV. - [aqui](http://vitibrasil.cnpuv.embrapa.br/index.php?opcao=opt_01).
 
-## Os dados são relativos:
+Os dados são relativos:
 
 - Produção.
 - Processamento.
@@ -13,25 +14,29 @@ Este projeto é a criação de uma API pública de consulta com finalidade de an
 
 A API será utilizada para alimentar uma base de dados de um modelo de Machine Learning.
 
-## Objetivos:
+## Objetivos
 
 - Construção de  uma Rest API em Python que faça consulta dos dados no site da Embrapa.
 - Documentar a API.
 - Criação de método de autenticação  - JWT.
-- Plano de deploy da API
-- Apresentar um MVP com o deploy e link.
+- Plano de deploy da API.
+- Apresentar um MVP.
 
 ## Tecnologias Utilizadas e Dependências
 
-- Python: 3.12.2
+- Python: 3.11
 - FastAPI
 - Uvicorn
-- SQLAlchem
+- SQLAlchemy
 - Pandas
 - Aiosqlite
 - Greenlet
-- Isort:
+- Unidecode
+- Mkdocs
+- Mkdocs-material
+- Mkdocstring
 - Taskipy
+- Isort
 - Blue
 - Httpx
 - Alembic
@@ -39,107 +44,47 @@ A API será utilizada para alimentar uma base de dados de um modelo de Machine L
 - Bcrypt
 - Pydantic
 
-## Pré-requisitos
+---
 
-Python e o Poetry instalados.
+## Tutorial de uso
 
-### Usando pyenv e pip ou pipx 
+### Instalação e Configuração do Ambiente
 
-1. Instale o `pyenv` seguindo as instruções em: [pyenv](https://github.com/pyenv/pyenv#installation)
+1 - Clone este repositório:
 
-##
-```python
-pip install pyenv 
-```
-ou
-##
-```python
-pipx install pyenv
+```py
+git clone https://github.com/MLET-007/Embrapa_fastapi.git
+cd Embrapa_fastapi
 ```
 
-2. Use o `pyenv` para instalar a versão correta do Python:
+## Inicializando o projeto
 
-##
-```python
-pyenv install 3.12.2
-```
-
-
-3. Instale o Poetry usando pip ou pipix:
-
-##
-```python
-pip install poetry
-```
-
-## Instalação e Configuração do Ambiente
-
-4. Clone este repositório:
-
-##
-```python
-git clone https://github.com/seu-usuario/nome-do-projeto.git
-cd nome-do-projeto
-```
-
-5. Já dentro da pasta, instale as dependências e crie o ambiente virtual usando o Poetry:
-
-##
-```python
-poetry install
-```
-
-
-6. Ative o ambiente virtual:
-
-##
-```python
-poetry shell
-```
-
-
-## Executando o Projeto
-
-7. Para executar o projeto, use o seguinte comando:
-
-##
-```python
-task run
-```
-
-** Obs:
-
-## Tarefas Disponíveis
-
-Este projeto utiliza o Taskipy para gerenciar tarefas comuns. Aqui estão algumas tarefas disponíveis:
-
-- ** task format**: Formata o código usando o Black e organiza as importações com o isort.
-- ** task run**: Inicia o servidor de desenvolvimento.
-
-Você pode executar qualquer tarefa usando o comando `poetry run task NOME_DA_TAREFA` adicinada no arquivo pyproject.toml:
-```python
-[tool.taskipy.tasks]
-format = 'blue .  && isort .'
-run = 'uvicorn embrapa.app:app --reload'
-```
-
-## Mais Informações dos endpoints na documentação /doc e /redoc
-
-```python
-http://localhost:8000/doc
-
-```
-
-
-## Tarefas Disponíveis
-
-Para mais informações sobre o projeto (... building)
-
-## Docker 
-
-Para rodar o projeto com docker basta executar
+Para rodar o projeto com docker basta executar.
 ```
 docker-compose up -d 
 ``` 
-Um container com a aplicação e postgres será criado para uso
+Um container com a aplicação e postgres será criado para uso.
 
+**Após rodar o comando espere 30 segundos antes de testar a aplicação**
+
+## Criando um usuario e senha
+
+Com o projeto rodando crie um usuario e senha para realizar a autenticação.
+**Endpoint de criação de usuario: http://localhost:8009/user**
+
+```json
+{
+  "username": "joao",
+  "email": "joao@email.com.br",
+  "full_name": "joao",
+  "password": "123",
+  "disabled": false
+}
+```
+
+Após isso coloque os dados do usuario criados na pop-up do botão 'Authorize'.
+
+## Realizando a carga de dados
+
+Após todos esses passos execute o endpoint de importação e teste os outros endpoints.
+**Endpoint de importação: http://localhost:8009/docs#/default/importa_csv_api_importar_csv_site_embrapa_get**

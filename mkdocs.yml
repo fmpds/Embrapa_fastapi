@@ -4,8 +4,8 @@ nav:
   - Documentação: documentacao.md
   - Endpoints: endpoints.md
   - Build: build.md
-  - Swagger: http://localhost:8000/docs
-  - Redoc: http://localhost:8000/redoc
+  - Swagger: http://localhost:8009/docs
+  - Redoc: http://localhost:8009/redoc
 theme:
   name: material
   font:
