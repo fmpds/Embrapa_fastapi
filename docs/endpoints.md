@@ -11,6 +11,7 @@ Para testar os endpoints citados abaixo, clique em Swagger ou Redoc para ser red
 - Consulta tabela Importação 
 - Consulta tabela Processamento 
 - Consulta tabela Produção
+- Criar usuário
 
 ---
 

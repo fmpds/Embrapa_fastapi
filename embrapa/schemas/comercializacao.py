@@ -3,11 +3,9 @@ from pydantic import BaseModel
 
 class ComercializacaoBase(BaseModel):
     produto: str
-    ano: int 
+    ano: int
     litros: int
-    tipo: str 
-
-    
+    tipo: str
 
 
 class ComercializacaoCreate(ComercializacaoBase):

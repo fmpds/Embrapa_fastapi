@@ -1,26 +1,10 @@
-import time
-from typing import List
-
-from fastapi import Depends, FastAPI, Query
+from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
-from sqlalchemy.ext.asyncio import AsyncSession
+from embrapa.routers import apis, import_csv, auth
 
-from embrapa import database
-from embrapa.import_embrapa import import_embrapa
-from embrapa.repository import (
-    comercializacaoRepository,
-    exportacaoRepository,
-    importacaoRepository,
-    processamentoRepository,
-    producaoRepository,
-)
-from embrapa.schemas.comercializacao import Comercializacao
-from embrapa.schemas.exportacao import Exportacao
-from embrapa.schemas.importacao import Importacao
-from embrapa.schemas.processamento import Processamento
-from embrapa.schemas.producao import Producao
 
 app = FastAPI()
+<<<<<<< HEAD
 
 app.mount('/mkdocs', StaticFiles(directory='site', html=True), name='mkdocs')
 
@@ -70,3 +54,9 @@ async def get_exportacoes(db: database.AsyncSessionLocal = Depends(get_db)):
 async def get_exportacoes(db: database.AsyncSessionLocal = Depends(get_db)):
     comercializacoes = await comercializacaoRepository.get_comercializacoes(db)
     return comercializacoes
+=======
+app.include_router(import_csv.router)
+app.include_router(apis.router)
+app.include_router(auth.router)
+app.mount('/mkdocs', StaticFiles(directory='site', html=True), name='mkdocs')
+>>>>>>> 90834444bce8a37fa45e37c956e167d826a8943d
