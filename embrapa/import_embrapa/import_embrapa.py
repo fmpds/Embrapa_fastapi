@@ -1,10 +1,17 @@
-import re
-import sqlite3
+"""
+O arquivo `import_embrapa.py` tem como função filtrar e carregar os arquivos .csv/dataset do [site da embrapa](http://vitibrasil.cnpuv.embrapa.br/index.php?opcao=opt_01).\
+ Possuindo aqui a explicação detalhada de suas funções, classes e citação das bibliotecas utilizadas.
+Bibliotecas utilizadas:
+
+    - numpy
+    - pandas
+    - unidecode
+"""
 
 import numpy as np
 import pandas as pd
 from unidecode import unidecode
-
+from embrapa.database import engine
 
 class read_dataset(object):
     """
@@ -12,6 +19,7 @@ class read_dataset(object):
         - `__init__`
         - f_read_datasets
     """
+
     def __init__(self, path: str, dataset: str, cols: list):
         self.path = path
         self.dataset = dataset
@@ -34,7 +42,13 @@ class read_dataset(object):
 
             header = [*self.cols, *time_interval]
 
-            dataframe = pd.read_csv(self.path, header=None, names=header, on_bad_lines='skip', sep=';')
+            dataframe = pd.read_csv(
+                self.path,
+                header=None,
+                names=header,
+                on_bad_lines='skip',
+                sep=';',
+            )
 
         elif self.dataset == 'processamento':
             dataframe = pd.read_csv(self.path, sep='\t', encoding='latin-1')
@@ -62,6 +76,7 @@ class etl_methods(object):
         - f_std_column_names
         - f_unpivot_table
     """
+
     def __init__(self, cols, values_unpivot):
         self.cols = cols
         self.values_unpivot = values_unpivot
@@ -77,7 +92,9 @@ class etl_methods(object):
             Dataframe: Dataframe com colunas padronizadas.
         """
 
-        new_cols_names = {coluna: unidecode(coluna).upper() for coluna in dataframe.columns}
+        new_cols_names = {
+            coluna: unidecode(coluna).upper() for coluna in dataframe.columns
+        }
 
         dataframe = dataframe.rename(columns=new_cols_names)
 
@@ -90,7 +107,7 @@ class etl_methods(object):
     # nualmente nos codigos para inclusão de novos anos)
 
     def f_unpivot_table(self, dataframe) -> pd.core.frame.DataFrame:
-        """Função para despivotar as tabelas do site da embrapa. 
+        """Função para despivotar as tabelas do site da embrapa.
 
         Args:
             self (Construtor): Todos os parâmetros do construtor.
@@ -99,11 +116,15 @@ class etl_methods(object):
         Returns:
             dataframe_unpivot: Dataframe despivotado.
         """
-        dataframe_unpivot = dataframe.melt(id_vars=self.cols, var_name='ANO', value_name= self.values_unpivot)[[*self.cols, 'ANO', self.values_unpivot]]
+        dataframe_unpivot = dataframe.melt(
+            id_vars=self.cols, var_name='ANO', value_name=self.values_unpivot
+        )[[*self.cols, 'ANO', self.values_unpivot]]
 
         return dataframe_unpivot
 
-    def f_remove_accents(self, dataframe, col_name: str) -> pd.core.frame.DataFrame:
+    def f_remove_accents(
+        self, dataframe, col_name: str
+    ) -> pd.core.frame.DataFrame:
         """Função para remover os acentos dos caracteres de uma coluna.
 
         Args:
@@ -114,11 +135,15 @@ class etl_methods(object):
         Returns:
             dataframe: Dataframe com colunas e valores sem acento.
         """
-        dataframe[col_name] = dataframe[col_name].apply(lambda x: unidecode(str(x)))
+        dataframe[col_name] = dataframe[col_name].apply(
+            lambda x: unidecode(str(x))
+        )
 
         return dataframe
 
-    def f_handling_missing_values(self, dataframe, col_name: str) -> pd.core.frame.DataFrame:
+    def f_handling_missing_values(
+        self, dataframe, col_name: str
+    ) -> pd.core.frame.DataFrame:
         """Função para tratar valores faltantes. Para colunas do tipo numerico (float
         ou inteiro) os missings ou valores que representem os missings são substitui
         dos por 0, caso contrario por '-'
@@ -127,15 +152,22 @@ class etl_methods(object):
             self (Construtor): Todos os parâmetros do construtor.
             dataframe (Dataframe): Dataframe pandas.
             col_name: Nome da coluna para tratar missings.
-            
+
         Returns:
             dataframe: Dataframe com coluna com missings tratados
         """
         if dataframe[col_name].isna().sum() > 0:
-            if (dataframe[col_name].dtypes == 'int64' or dataframe[col_name].dtypes == 'float64'):
-                dataframe[col_name] = dataframe[col_name].fillna(0, inplace=False)
+            if (
+                dataframe[col_name].dtypes == 'int64'
+                or dataframe[col_name].dtypes == 'float64'
+            ):
+                dataframe[col_name] = dataframe[col_name].fillna(
+                    0, inplace=False
+                )
             else:
-                dataframe[col_name] = dataframe[col_name].fillna('-', inplace=False)
+                dataframe[col_name] = dataframe[col_name].fillna(
+                    '-', inplace=False
+                )
 
         return dataframe
 
@@ -161,7 +193,10 @@ class etl_methods(object):
 
             # verifica se valor da linha do produto é Maiusculo e se o seguinte é minusculo
             # isso caracterica linhas que representam classes de vinhos
-            if (dataframe.at[i - 1, col_name][-2].isupper() and dataframe.at[i, col_name][-2].islower()):
+            if (
+                dataframe.at[i - 1, col_name][-2].isupper()
+                and dataframe.at[i, col_name][-2].islower()
+            ):
                 rows_to_remove.append(i)
 
         return rows_to_remove
@@ -169,16 +204,18 @@ class etl_methods(object):
     # Nota-se que algumas colunas das tabelas representam
     # uma copia ou algum ruido. Elas são removidas com essa função
 
-    def f_adjust_final_table(self, dataframe: pd.core.frame.DataFrame, cols_to_drop, cols_to_rename) -> pd.core.frame.DataFrame:
+    def f_adjust_final_table(
+        self, dataframe: pd.core.frame.DataFrame, cols_to_drop, cols_to_rename
+    ) -> pd.core.frame.DataFrame:
         """
-        Função para renomear e remover colunas. 
+        Função para renomear e remover colunas.
 
         Args:
             self (Construtor): Todos os parametros do construtor.
             dataframe (Dataframe): Dataframe pandas.
             cols_to_drop (list, None): Lista de nomes das colunas que serão removidas. Se None, nenhuma coluna pe removida
             cols_to_rename (dict, None): Dicionario com mapeamento dos nomes das colunas. Se None, nenhuma coluna é renomeada
-            
+
         Returns:
             dataframe: Dataframe com as colunas renomeadas/removidas determinadas
         """
@@ -191,7 +228,9 @@ class etl_methods(object):
 
         return dataframe
 
-    def f_correct_types_exp_imp(self, dataframe: pd.core.frame.DataFrame) -> pd.core.frame.DataFrame:
+    def f_correct_types_exp_imp(
+        self, dataframe: pd.core.frame.DataFrame
+    ) -> pd.core.frame.DataFrame:
         """Função para definir tipos das tabelas de Imp e Exp.
 
         Args:
@@ -203,12 +242,16 @@ class etl_methods(object):
         """
         dataframe['PAIS'] = dataframe['PAIS'].astype(str)
         dataframe['ANO'] = dataframe['ANO'].astype('int64')
-        dataframe['QUANTIDADE'] = dataframe['QUANTIDADE'].fillna(0).astype('int64')
+        dataframe['QUANTIDADE'] = (
+            dataframe['QUANTIDADE'].fillna(0).astype('int64')
+        )
         dataframe['VALOR'] = dataframe['VALOR'].astype('float64')
 
         return dataframe
 
-    def f_correct_types_generic(self, dataframe: pd.core.frame.DataFrame) -> pd.core.frame.DataFrame:
+    def f_correct_types_generic(
+        self, dataframe: pd.core.frame.DataFrame
+    ) -> pd.core.frame.DataFrame:
         """Função para definir tipos das tabelas de comer e prod.
 
         Args:
@@ -225,7 +268,9 @@ class etl_methods(object):
 
         return dataframe
 
-    def f_correct_types_proc(self, dataframe: pd.core.frame.DataFrame) -> pd.core.frame.DataFrame:
+    def f_correct_types_proc(
+        self, dataframe: pd.core.frame.DataFrame
+    ) -> pd.core.frame.DataFrame:
         """Função para definir tipos das tabelas de comercialização e processamento.
 
         Args:
@@ -243,7 +288,9 @@ class etl_methods(object):
 
         return dataframe
 
-    def f_get_dol_values(self, dataframe: pd.core.frame.DataFrame) -> pd.core.frame.DataFrame:
+    def f_get_dol_values(
+        self, dataframe: pd.core.frame.DataFrame
+    ) -> pd.core.frame.DataFrame:
         """Função para recolher os valores dos anos relacionados ao dinheiro.
 
         Args:
@@ -259,7 +306,9 @@ class etl_methods(object):
 
         return df_dol
 
-    def f_get_kg_values(self, dataframe: pd.core.frame.DataFrame) -> pd.core.frame.DataFrame:
+    def f_get_kg_values(
+        self, dataframe: pd.core.frame.DataFrame
+    ) -> pd.core.frame.DataFrame:
         """Função para recolher os valores dos anos relacionados a quantidade.
 
         Args:
@@ -269,14 +318,18 @@ class etl_methods(object):
         Returns:
             df_kg: Dataframe...
         """
-        kg = [column for column in dataframe.columns if not column.endswith('.1')]
+        kg = [
+            column for column in dataframe.columns if not column.endswith('.1')
+        ]
 
         df_kg = dataframe.loc[:, kg]
 
         return df_kg
 
-    def f_remove_dot_1(self, df_dol: pd.core.frame.DataFrame) -> pd.core.frame.DataFrame:
-        
+    def f_remove_dot_1(
+        self, df_dol: pd.core.frame.DataFrame
+    ) -> pd.core.frame.DataFrame:
+
         """Função para retirar colunas que terminam com o sufixo ".1"
 
         Args:
@@ -286,25 +339,30 @@ class etl_methods(object):
         Returns:
             df_dol: Dataframe com as colunas filtradas
         """
-        columns_adjusted = [column.replace('.1', '') for column in list(df_dol.columns)]
+        columns_adjusted = [
+            column.replace('.1', '') for column in list(df_dol.columns)
+        ]
 
         df_dol.columns = columns_adjusted
 
         return df_dol
 
 
-def f_adjust_table(df, cols, values_unpivot, dataset: dict) -> pd.core.frame.DataFrame:
+def f_adjust_table(
+    df, cols, values_unpivot, dataset: dict
+) -> pd.core.frame.DataFrame:
     """Função para ajustar um dataframe com todas as funções dentro de "etl_methods"
 
-        Args:
-            df (Dataframe): Dataframe 
-            cols (object): Colunas do dataframe
-            value_unpivot (object): Colunas despivotadas (?)
-            dataset: Dataset
+    Args:
+        df (Dataframe): Dataframe
+        cols (object): Colunas do dataframe
+        value_unpivot (object): Colunas despivotadas (?)
+        dataset: Dataset
 
-        Returns:
-            df_final: Dataframe filtrado
+    Returns:
+        df_final: Dataframe filtrado
     """
+
     def f_create_type_product(row, column):
         if row[column][-2].isupper():
             return row[column]
@@ -319,18 +377,22 @@ def f_adjust_table(df, cols, values_unpivot, dataset: dict) -> pd.core.frame.Dat
 
     column = str(list(dataset.values())[0])
 
-    df_unpivot['TIPO'] = df_unpivot.apply(lambda row: f_create_type_product(row, column), axis=1)
+    df_unpivot['TIPO'] = df_unpivot.apply(
+        lambda row: f_create_type_product(row, column), axis=1
+    )
     df_unpivot['TIPO'] = df_unpivot['TIPO'].ffill()
 
     rows_to_remove = etl_comer.f_remove_product_acumul_2(df_unpivot, column)
 
     rows_to_remove = [x - 1 for x in rows_to_remove]
 
-    df_unpivot.drop(rows_to_remove, inplace = True)
-    
+    df_unpivot.drop(rows_to_remove, inplace=True)
+
     df_unpivot['ID'] = range(0, len(df_unpivot['ID']))
-    df_unpivot['ID'] = df_unpivot['ID'].astype(str) + df_unpivot['ANO'].astype(str)
-    
+    df_unpivot['ID'] = df_unpivot['ID'].astype(str) + df_unpivot['ANO'].astype(
+        str
+    )
+
     def f_replace_by_zero(value):
         """Função para remover qualquer conjunto de caracteres de uma coluna numerica.
 
@@ -349,13 +411,19 @@ def f_adjust_table(df, cols, values_unpivot, dataset: dict) -> pd.core.frame.Dat
 
     if str(list(dataset.keys())[0]) == 'comercializacao':
 
-        df_final = etl_comer.f_adjust_final_table(df_unpivot, ['PRODUTO1'], {'PRODUTO2': 'PRODUTO'})
+        df_final = etl_comer.f_adjust_final_table(
+            df_unpivot, ['PRODUTO1'], {'PRODUTO2': 'PRODUTO'}
+        )
 
         df_final = etl_comer.f_correct_types_generic(df_final)
     elif str(list(dataset.keys())[0]) == 'processamento':
-        df_final = etl_comer.f_adjust_final_table(df_unpivot, ['CONTROL'], None)
+        df_final = etl_comer.f_adjust_final_table(
+            df_unpivot, ['CONTROL'], None
+        )
 
-        df_final['QUANTIDADE'] = (df_final['QUANTIDADE'].astype(str).apply(f_replace_by_zero))
+        df_final['QUANTIDADE'] = (
+            df_final['QUANTIDADE'].astype(str).apply(f_replace_by_zero)
+        )
 
         df_final = etl_comer.f_correct_types_proc(df_final)
     else:
@@ -384,23 +452,28 @@ def f_adjust_exp_imp_table(df_exp_imp, cols, values_unpivot):
     df_exp_kg_unpivot = etl_exp_imp.f_unpivot_table(dataframe=df_exp_kg)
     df_exp_dol_unpivot = etl_exp_imp.f_unpivot_table(dataframe=df_exp_dol)
 
-    df_exp_dol_unpivot.rename(columns={'QUANTIDADE':'VALOR'}, inplace = True)
-    
-    df_exp_merge = df_exp_kg_unpivot.merge(df_exp_dol_unpivot, how = 'inner', on = ['ID', 'PAIS', 'ANO'])
+    df_exp_dol_unpivot.rename(columns={'QUANTIDADE': 'VALOR'}, inplace=True)
 
+    df_exp_merge = df_exp_kg_unpivot.merge(
+        df_exp_dol_unpivot, how='inner', on=['ID', 'PAIS', 'ANO']
+    )
 
     df_exp_merge = etl_exp_imp.f_remove_accents(df_exp_merge, 'PAIS')
 
-    #print(df_exp_merge.columns)
+    # print(df_exp_merge.columns)
     df_exp_merge = etl_exp_imp.f_correct_types_exp_imp(df_exp_merge)
-    
+
     df_exp_merge['ID'] = range(0, len(df_exp_merge['ID']))
-    df_exp_merge['ID'] = df_exp_merge['ID'].astype(str) + df_exp_merge['ANO'].astype(str)
-    
-    cols_to_handle_missing =  list(df_exp_merge.columns)
+    df_exp_merge['ID'] = df_exp_merge['ID'].astype(str) + df_exp_merge[
+        'ANO'
+    ].astype(str)
+
+    cols_to_handle_missing = list(df_exp_merge.columns)
 
     for col in cols_to_handle_missing:
-        df_exp_merge = etl_exp_imp.f_handling_missing_values(dataframe=df_exp_merge, col_name=col)
+        df_exp_merge = etl_exp_imp.f_handling_missing_values(
+            dataframe=df_exp_merge, col_name=col
+        )
 
     return df_exp_merge
 
@@ -412,8 +485,7 @@ def import_csv_site_embrapa(online: bool):
     """Função para importar os arquivos .csv do site da embrapa
 
     Parameters:
-        online (bool): Em caso True os arquivos .csv serão baixados direto do site da 
-        embrapa, em caso de False os arquivos .csv serão carregados a partir de um diretorio local
+        online (bool): Em caso True os arquivos .csv serão baixados direto do site da embrapa, em caso de False os arquivos .csv serão carregados a partir de um diretorio local
 
     """
 
@@ -432,7 +504,7 @@ def import_csv_site_embrapa(online: bool):
             'processamento': 'embrapa/csv_files/ProcessaViniferas.csv',
             'exportacao': 'embrapa/csv_files/ExpVinho.csv',
             'importacao': 'embrapa/csv_files/ImpVinhos.csv',
-        }    
+        }
 
     for dataset in list(paths.keys()):
 
@@ -441,10 +513,17 @@ def import_csv_site_embrapa(online: bool):
             datasets_columns = {'comercializacao': 'PRODUTO2'}
             values_unpivot = 'LITROS'
 
-            read = read_dataset(path=paths[dataset], dataset=dataset, cols=cols)
+            read = read_dataset(
+                path=paths[dataset], dataset=dataset, cols=cols
+            )
 
             df_comer = read.f_read_datasets()
-            df_final = f_adjust_table(df_comer, cols=cols, values_unpivot=values_unpivot, dataset=datasets_columns)
+            df_final = f_adjust_table(
+                df_comer,
+                cols=cols,
+                values_unpivot=values_unpivot,
+                dataset=datasets_columns,
+            )
 
             # df_comer_final.to_csv("./df_comer_processed.csv", encoding="utf-16")
 
@@ -453,10 +532,17 @@ def import_csv_site_embrapa(online: bool):
             datasets_columns = {'producao': 'PRODUTO'}
             values_unpivot = 'LITROS'
 
-            read = read_dataset(path=paths[dataset], dataset=dataset, cols=cols)
+            read = read_dataset(
+                path=paths[dataset], dataset=dataset, cols=cols
+            )
 
             df_prod = read.f_read_datasets()
-            df_final = f_adjust_table(df_prod, cols=cols, values_unpivot=values_unpivot, dataset=datasets_columns)
+            df_final = f_adjust_table(
+                df_prod,
+                cols=cols,
+                values_unpivot=values_unpivot,
+                dataset=datasets_columns,
+            )
 
             # df_prod_final.to_csv("./df_prod_processed.csv", encoding="utf-16")
 
@@ -465,10 +551,17 @@ def import_csv_site_embrapa(online: bool):
             datasets_columns = {'processamento': 'CULTIVAR'}
             values_unpivot = 'QUANTIDADE'
 
-            read = read_dataset(path=paths[dataset], dataset=dataset, cols=cols)
+            read = read_dataset(
+                path=paths[dataset], dataset=dataset, cols=cols
+            )
 
             df_proc = read.f_read_datasets()
-            df_final = f_adjust_table(df_proc,cols=cols,values_unpivot=values_unpivot, dataset=datasets_columns)
+            df_final = f_adjust_table(
+                df_proc,
+                cols=cols,
+                values_unpivot=values_unpivot,
+                dataset=datasets_columns,
+            )
 
             # df_proc_final.to_csv("./df_proc_processed.csv", encoding="utf-16")
 
@@ -476,38 +569,40 @@ def import_csv_site_embrapa(online: bool):
             cols = ['ID', 'PAIS']
             values_unpivot = 'QUANTIDADE'
 
-            read = read_dataset(path=paths[dataset], cols=cols, dataset=dataset)
+            read = read_dataset(
+                path=paths[dataset], cols=cols, dataset=dataset
+            )
 
             df_exp = read.f_read_datasets()
 
-            df_final = f_adjust_exp_imp_table(df_exp, cols=cols, values_unpivot=values_unpivot)
+            df_final = f_adjust_exp_imp_table(
+                df_exp, cols=cols, values_unpivot=values_unpivot
+            )
 
             # df_exp_final.to_csv("./df_exp_processed.csv", encoding="utf-16")
 
         elif dataset == 'importacao':
             cols = ['ID', 'PAIS']
-            
-            values_unpivot = "QUANTIDADE"
-             
-            read = read_dataset(path=paths[dataset], cols=cols, dataset=dataset)
+
+            values_unpivot = 'QUANTIDADE'
+
+            read = read_dataset(
+                path=paths[dataset], cols=cols, dataset=dataset
+            )
 
             df_imp = read.f_read_datasets()
 
-            df_final = f_adjust_exp_imp_table(df_imp, cols=cols, values_unpivot=values_unpivot)
-    
-            #df_imp_final.to_csv("./df_imp_processed.csv", encoding="utf-16")       
+            df_final = f_adjust_exp_imp_table(
+                df_imp, cols=cols, values_unpivot=values_unpivot
+            )
 
+            # df_imp_final.to_csv("./df_imp_processed.csv", encoding="utf-16")
 
-        conn = sqlite3.connect('db.sqlite3')
-
-        if not table_exists(conn, dataset):
-
-            df_final.to_sql(dataset, conn, index=False)
-        else:
-
-            df_final.to_sql(dataset, conn, index=False, if_exists='append')
-
-        conn.close()
+        try:
+            df_final.columns = map(str.lower, df_final.columns)
+            df_final.to_sql(dataset, engine, index=False, if_exists='append')
+        except Exception as e:
+            print(e)
 
 
 def table_exists(conn, table_name):

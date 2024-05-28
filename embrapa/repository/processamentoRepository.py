@@ -4,6 +4,6 @@ from sqlalchemy.future import select
 from embrapa.models.processamentoModel import Processamento
 
 
-async def get_processamentos(db: AsyncSession):
-    result = await db.execute(select(Processamento))
+def get_processamentos(db: AsyncSession):
+    result = db.execute(select(Processamento))
     return result.scalars().all()

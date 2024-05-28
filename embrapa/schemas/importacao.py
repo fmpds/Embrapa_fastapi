@@ -2,8 +2,8 @@ from pydantic import BaseModel, Field
 
 
 class ImportacaoBase(BaseModel):
-    pais: str 
-    ano: int 
+    pais: str
+    ano: int
     quantidade: int
     valor: float
 

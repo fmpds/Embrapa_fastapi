@@ -3,10 +3,9 @@ from pydantic import BaseModel, Field
 
 class ProcessamentoBase(BaseModel):
     cultivar: str
-    ano: int 
-    quantidade: int 
+    ano: int
+    quantidade: int
     tipo: str
-
 
 
 class ProcessamentoCreate(ProcessamentoBase):

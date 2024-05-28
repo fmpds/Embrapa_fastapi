@@ -19,101 +19,78 @@ A API será utilizada para alimentar uma base de dados de um modelo de Machine L
 - Construção de  uma Rest API em Python que faça consulta dos dados no site da Embrapa.
 - Documentar a API.
 - Criação de método de autenticação  - JWT.
-- Plano de deploy da API
-- Apresentar um MVP com o deploy e link.
+- Plano de deploy da API.
+- Apresentar um MVP.
 
 ## Tecnologias Utilizadas e Dependências
 
-- Python: 3.12.2
+- Python: 3.11
 - FastAPI
 - Uvicorn
-- SQLAlchem
+- SQLAlchemy
 - Pandas
 - Aiosqlite
 - Greenlet
-- Isort:
+- Unidecode
+- Mkdocs
+- Mkdocs-material
+- Mkdocstring
 - Taskipy
+- Isort
 - Blue
 - Httpx
+- Alembic
+- Postgres
+- Bcrypt
+- Pydantic
 
 ---
 
 ## Tutorial de uso
-
-Pré-requisitos:
-
-- Python
-- Poetry
-
-### Instalação do Pyenv e Poetry
-
-Usando pyenv e pip ou pipx 
-
-1 - Instale o `pyenv` seguindo as instruções em: [pyenv](https://github.com/pyenv/pyenv#installation)
-
-```py
-pip install pyenv 
-```
-
-ou
-
-```py
-pipx install pyenv
-```
-
-2 - Use o `pyenv` para instalar a versão correta do Python:
-
-```py
-pyenv install 3.12.2
-```
-
-3 - Instale o Poetry usando pip ou pipix:
-
-```py
-pip install poetry
-```
 
 ### Instalação e Configuração do Ambiente
 
 1 - Clone este repositório:
 
 ```py
-git clone https://github.com/seu-usuario/nome-do-projeto.git
-cd nome-do-projeto
-```
-
-2 - Já dentro da pasta, instale as dependências e crie o ambiente virtual usando o Poetry:
-
-```py
-poetry install
-```
-
-3 - Ative o ambiente virtual:
-
-```py
-poetry shell
-```
-
-### Executando o Projeto
-
-Para executar o projeto, use o seguinte comando:
-
-```py
-task run
+git clone https://github.com/MLET-007/Embrapa_fastapi.git
+cd Embrapa_fastapi
 ```
 
 ---
 
-## Tarefas Disponíveis
+## Inicializando o projeto
 
-Este projeto utiliza o Taskipy para gerenciar tarefas comuns. Aqui estão algumas tarefas disponíveis:
-
-- ```task format```: Formata o código usando o Black e organiza as importações com o isort.
-- ```task run```: Inicia o servidor de desenvolvimento.
-
-Você pode executar qualquer tarefa usando o comando `poetry run task NOME_DA_TAREFA` adicinada no arquivo pyproject.toml:
-```py title="Exemplo task"
-[tool.taskipy.tasks]
-format = 'blue .  && isort .'
-run = 'uvicorn embrapa.app:app --reload'
+Para rodar o projeto com docker basta executar.
 ```
+docker-compose up -d 
+``` 
+Um container com a aplicação e postgres será criado para uso.
+
+**Após rodar o comando espere 30 segundos antes de testar a aplicação**
+
+---
+
+## Criando um usuario e senha
+
+Com o projeto rodando crie um usuario e senha para realizar a autenticação.
+
+**Endpoint de criação de usuario: `http://localhost:8009/user`**
+
+```json
+{
+  "username": "joao",
+  "email": "joao@email.com.br",
+  "full_name": "joao",
+  "password": "123",
+  "disabled": false
+}
+```
+
+Após isso coloque os dados do usuario criados na pop-up do botão 'Authorize'.
+
+## Realizando a carga de dados
+
+Após todos esses passos execute o endpoint de importação e teste os outros endpoints.
+
+**Endpoint de importação: `http://localhost:8009/docs#/default/importa_csv_api_importar_csv_site_embrapa_get`**

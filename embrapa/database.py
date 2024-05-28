@@ -1,14 +1,14 @@
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
-
+from embrapa.config import settings
+from sqlalchemy import create_engine
 # DATABASE_URL = 'sqlite+aiosqlite:///./mle.db'
-DATABASE_URL = 'sqlite+aiosqlite:///./db.sqlite3'
+# DATABASE_URL = 'sqlite+aiosqlite:///./db.sqlite3'
 
 
-engine = create_async_engine(DATABASE_URL, echo=True)
+engine = create_engine(settings.database_uri, echo=True)
 
-AsyncSessionLocal = sessionmaker(
-    engine, expire_on_commit=False, class_=AsyncSession
+SessionLocal = sessionmaker(
+    engine, expire_on_commit=False
 )
 
 Base = declarative_base()
