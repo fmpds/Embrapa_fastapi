@@ -477,8 +477,7 @@ def import_csv_site_embrapa(online: bool):
     """Função para importar os arquivos .csv do site da embrapa
 
     Parameters:
-        online (bool): Em caso True os arquivos .csv serão baixados direto do site da
-        embrapa, em caso de False os arquivos .csv serão carregados a partir de um diretorio local
+        online (bool): Em caso True os arquivos .csv serão baixados direto do site da embrapa, em caso de False os arquivos .csv serão carregados a partir de um diretorio local
 
     """
 
